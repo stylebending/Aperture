@@ -1,0 +1,29 @@
+[package]
+name = "aperture"
+version = "0.1.0"
+edition = "2021"
+description = "Windows-native diagnostic TUI for power users"
+authors = ["Winsight"]
+license = "MIT"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+tokio = { version = "1", features = ["full"] }
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_System_Services",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_System_RestartManager",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_Networking_WinSock",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Diagnostics_Debug",
+] }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true

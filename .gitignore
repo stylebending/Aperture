@@ -1,0 +1,17 @@
+# Rust build artifacts
+/target/
+
+# IDE directories
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Windows executables
+*.exe
+*.pdb
+*.dll
