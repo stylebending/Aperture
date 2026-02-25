@@ -1,6 +1,6 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     widgets::{Block, Borders, List, ListItem},
     Frame,
 };
@@ -26,20 +26,28 @@ pub fn render(f: &mut Frame, state: &mut ControllerState, search_query: &str, ar
         })
         .collect();
 
+    let header = ListItem::new(format!(
+        "{:40} {:10} {:12} {}",
+        "Name", "Status", "Start Type", "Type"
+    ))
+    .style(
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    );
+    let mut all_items: Vec<ListItem> = vec![header];
+    all_items.extend(items);
+
     // Build title with filter and sort info
     let total = state.services.len();
     let showing = filtered.len();
     let sort_info = format!("{} {}", state.sort_key.as_str(), state.sort_order.as_str());
-    let title = if showing != total {
-        format!(
-            " Services (Controller) [{}/{} | {}] ",
-            showing, total, sort_info
-        )
-    } else {
-        format!(" Services (Controller) [{}] ", sort_info)
-    };
+    let title = format!(
+        " Services (Controller) [{}/{} | {}] ",
+        showing, total, sort_info
+    );
 
-    let list = List::new(items)
+    let list = List::new(all_items)
         .block(
             Block::default()
                 .borders(Borders::ALL)

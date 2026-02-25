@@ -146,31 +146,50 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
                 }
             }
             app::Modal::HandleSearch { .. } => {
-                match code {
-                    KeyCode::Esc | KeyCode::Char('q') => {
-                        app.cancel_modal();
-                    }
-                    KeyCode::Enter => {
-                        app.execute_handle_search();
-                    }
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        app.handle_search_modal_select_next();
-                    }
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        app.handle_search_modal_select_prev();
-                    }
-                    KeyCode::Char('K') => {
-                        if app.is_elevated {
-                            app.kill_selected_locking_process();
+                if app.handle_search_input_mode {
+                    match code {
+                        KeyCode::Esc => {
+                            app.exit_handle_search_input_mode();
                         }
+                        KeyCode::Enter => {
+                            app.exit_handle_search_input_mode();
+                            app.execute_handle_search();
+                        }
+                        KeyCode::Char(c) => {
+                            app.handle_search_modal_char(c);
+                        }
+                        KeyCode::Backspace => {
+                            app.handle_search_modal_backspace();
+                        }
+                        _ => {}
                     }
-                    KeyCode::Char(c) => {
-                        app.handle_search_modal_char(c);
+                } else {
+                    match code {
+                        KeyCode::Esc | KeyCode::Char('q') => {
+                            app.cancel_modal();
+                        }
+                        KeyCode::Char('/') => {
+                            app.enter_handle_search_input_mode();
+                        }
+                        KeyCode::Enter => {
+                            app.execute_handle_search();
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            app.handle_search_modal_select_next();
+                        }
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            app.handle_search_modal_select_prev();
+                        }
+                        KeyCode::Char('K') => {
+                            if app.is_elevated {
+                                app.kill_selected_locking_process();
+                            }
+                        }
+                        KeyCode::Backspace => {
+                            app.handle_search_modal_backspace();
+                        }
+                        _ => {}
                     }
-                    KeyCode::Backspace => {
-                        app.handle_search_modal_backspace();
-                    }
-                    _ => {}
                 }
             }
         }

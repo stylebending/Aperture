@@ -7,6 +7,7 @@ use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVAT
 use windows::Win32::System::ProcessStatus::{
     EnumProcesses, GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS,
 };
+use windows::Win32::System::SystemInformation::{GetSystemInfo, SYSTEM_INFO};
 use windows::Win32::System::Threading::{
     GetCurrentProcess, GetProcessTimes, OpenProcess, OpenProcessToken, QueryFullProcessImageNameW,
     PROCESS_NAME_FORMAT, PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION,
@@ -27,6 +28,20 @@ pub struct ProcessInfo {
 }
 
 static mut PREV_CPU_TIMES: Option<HashMap<u32, (u64, Instant)>> = None;
+static mut NUM_CPUS: Option<u32> = None;
+
+fn get_num_cpus() -> u32 {
+    unsafe {
+        if let Some(n) = NUM_CPUS {
+            return n;
+        }
+        let mut sys_info: SYSTEM_INFO = SYSTEM_INFO::default();
+        GetSystemInfo(&mut sys_info);
+        let n = sys_info.dwNumberOfProcessors;
+        NUM_CPUS = Some(n);
+        n
+    }
+}
 
 pub fn is_elevated() -> bool {
     unsafe {
@@ -134,6 +149,7 @@ pub fn update_process_metrics(
 ) -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let now = Instant::now();
+        #[allow(static_mut_refs)]
         let prev_times = PREV_CPU_TIMES.get_or_insert_with(HashMap::new);
         let mut new_times: HashMap<u32, (u64, Instant)> = HashMap::new();
 
@@ -177,12 +193,15 @@ pub fn update_process_metrics(
                         let elapsed = now.duration_since(prev_instant).as_millis() as u64;
                         if elapsed > 0 {
                             let delta = total_time.saturating_sub(prev_time);
+                            let num_cpus = get_num_cpus() as f64;
                             let cpu_percent =
-                                (delta as f64 / 100_000.0) / (elapsed as f64 / 1000.0) * 100.0;
-                            process.cpu_usage = cpu_percent as f32;
-                            // Cache the value for stable display
+                                ((delta as f64 / 10_000_000.0) / (elapsed as f64 / 1000.0) * 100.0)
+                                    / num_cpus;
+                            process.cpu_usage = (cpu_percent.max(0.0).min(100.0)) as f32;
                             process.last_cpu_usage = process.cpu_usage;
                         }
+                    } else {
+                        process.last_cpu_usage = 0.0;
                     }
                 }
 

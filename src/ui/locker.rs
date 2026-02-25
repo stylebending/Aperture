@@ -1,6 +1,6 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     widgets::{Block, Borders, List, ListItem},
     Frame,
 };
@@ -47,23 +47,32 @@ pub fn render(f: &mut Frame, state: &mut LockerState, search_query: &str, area: 
                 mem_str,
                 p.path.as_deref().unwrap_or("-")
             ))
+            .style(Style::default().fg(Color::White))
         })
         .collect();
+
+    let header = ListItem::new(format!(
+        "{:6} {:20} {:>6} {:>6} {}",
+        "PID", "Name", "CPU%", "Mem", "Path"
+    ))
+    .style(
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    );
+    let mut all_items: Vec<ListItem> = vec![header];
+    all_items.extend(items);
 
     // Build title with filter and sort info
     let total = state.processes.len();
     let showing = filtered.len();
     let sort_info = format!("{} {}", state.sort_key.as_str(), state.sort_order.as_str());
-    let title = if showing != total {
-        format!(
-            " Processes (Locker) [{}/{} | {}] ",
-            showing, total, sort_info
-        )
-    } else {
-        format!(" Processes (Locker) [{}] ", sort_info)
-    };
+    let title = format!(
+        " Processes (Locker) [{}/{} | {}] ",
+        showing, total, sort_info
+    );
 
-    let list = List::new(items)
+    let list = List::new(all_items)
         .block(
             Block::default()
                 .borders(Borders::ALL)

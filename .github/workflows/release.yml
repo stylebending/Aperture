@@ -32,7 +32,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.get_version.outputs.VERSION }}
-          files: target/release/aperture.exe
+          files: target/release/Aperture.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

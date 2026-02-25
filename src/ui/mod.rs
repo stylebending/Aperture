@@ -318,6 +318,8 @@ fn render_modal(f: &mut Frame, app: &mut App) {
             selected,
             loading,
             error,
+            is_directory,
+            files_scanned,
         }) => {
             render_handle_search_modal(
                 f,
@@ -327,6 +329,9 @@ fn render_modal(f: &mut Frame, app: &mut App) {
                 *loading,
                 error,
                 app.is_elevated,
+                app.handle_search_input_mode,
+                *is_directory,
+                *files_scanned,
             );
         }
         _ => {}
@@ -376,8 +381,21 @@ fn render_handle_search_modal(
     loading: bool,
     error: &Option<String>,
     is_elevated: bool,
+    input_mode: bool,
+    is_directory: bool,
+    files_scanned: Option<usize>,
 ) {
     let area = centered_rect(70, 20, f.area());
+
+    let input_display = if input.is_empty() {
+        if input_mode {
+            "_".to_string()
+        } else {
+            "(enter path)".to_string()
+        }
+    } else {
+        input.to_string()
+    };
 
     let mut lines = vec![
         Line::from(Span::styled(
@@ -388,15 +406,28 @@ fn render_handle_search_modal(
         )),
         Line::from(""),
         Line::from(Span::styled(
-            format!("Paths: {}", input.replace('\n', "; ")),
-            Style::default().fg(Color::Gray),
+            format!("Path: {}", input_display.replace('\n', "; ")),
+            Style::default().fg(if input_mode {
+                Color::White
+            } else {
+                Color::Gray
+            }),
         )),
         Line::from(""),
     ];
 
     if loading {
+        let scan_msg = if is_directory {
+            if let Some(count) = files_scanned {
+                format!("  Scanning {} files...", count)
+            } else {
+                "  Scanning directory...".to_string()
+            }
+        } else {
+            "  Searching...".to_string()
+        };
         lines.push(Line::from(Span::styled(
-            "  Searching...",
+            scan_msg,
             Style::default().fg(Color::Yellow),
         )));
     } else if let Some(err) = error {
@@ -405,13 +436,31 @@ fn render_handle_search_modal(
             Style::default().fg(Color::Red),
         )));
     } else if results.is_empty() {
+        let empty_msg = if is_directory {
+            if let Some(count) = files_scanned {
+                format!("  Scanned {} files - no locks found.", count)
+            } else {
+                "  No locking processes found.".to_string()
+            }
+        } else {
+            "  No locking processes found.".to_string()
+        };
         lines.push(Line::from(Span::styled(
-            "  No locking processes found.",
+            empty_msg,
             Style::default().fg(Color::Green),
         )));
     } else {
+        let results_msg = if is_directory {
+            if let Some(count) = files_scanned {
+                format!("  Scanned {} files - Found {} locks:", count, results.len())
+            } else {
+                format!("  Found {} locks:", results.len())
+            }
+        } else {
+            format!("  Locking processes ({}):", results.len())
+        };
         lines.push(Line::from(Span::styled(
-            "  Locking processes:",
+            results_msg,
             Style::default().fg(Color::Yellow),
         )));
         lines.push(Line::from(""));
@@ -432,16 +481,26 @@ fn render_handle_search_modal(
     }
 
     lines.push(Line::from(""));
-    lines.push(Line::from(vec![
-        Span::styled("[Enter] Search  ", Style::default().fg(Color::Gray)),
-        Span::styled("[j/k] Navigate  ", Style::default().fg(Color::Gray)),
-        if is_elevated {
-            Span::styled("[K] Kill  ", Style::default().fg(Color::Red))
-        } else {
-            Span::styled("[K] Kill (admin)  ", Style::default().fg(Color::DarkGray))
-        },
-        Span::styled("[Esc] Close", Style::default().fg(Color::Gray)),
-    ]));
+
+    let hints = if input_mode {
+        vec![
+            Span::styled("[Enter] Search  ", Style::default().fg(Color::Gray)),
+            Span::styled("[Esc] Cancel  ", Style::default().fg(Color::Gray)),
+        ]
+    } else {
+        vec![
+            Span::styled("[/] Edit Path  ", Style::default().fg(Color::Gray)),
+            Span::styled("[Enter] Search  ", Style::default().fg(Color::Gray)),
+            Span::styled("[j/k] Navigate  ", Style::default().fg(Color::Gray)),
+            if is_elevated {
+                Span::styled("[K] Kill  ", Style::default().fg(Color::Red))
+            } else {
+                Span::styled("[K] Kill (admin)  ", Style::default().fg(Color::DarkGray))
+            },
+            Span::styled("[Esc] Close", Style::default().fg(Color::Gray)),
+        ]
+    };
+    lines.push(Line::from(hints));
 
     let paragraph = Paragraph::new(lines).block(
         Block::default()

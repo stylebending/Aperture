@@ -1,6 +1,6 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     widgets::{Block, Borders, List, ListItem},
     Frame,
 };
@@ -31,17 +31,25 @@ pub fn render(f: &mut Frame, state: &mut NexusState, search_query: &str, area: R
         })
         .collect();
 
+    let header = ListItem::new(format!(
+        "{:6} {:5} {:22} {:22} {:12} {}",
+        "PID", "Proto", "Local", "Remote", "State", "Process"
+    ))
+    .style(
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    );
+    let mut all_items: Vec<ListItem> = vec![header];
+    all_items.extend(items);
+
     // Build title with filter and sort info
     let total = state.connections.len();
     let showing = filtered.len();
     let sort_info = format!("{} {}", state.sort_key.as_str(), state.sort_order.as_str());
-    let title = if showing != total {
-        format!(" Network (Nexus) [{}/{} | {}] ", showing, total, sort_info)
-    } else {
-        format!(" Network (Nexus) [{}] ", sort_info)
-    };
+    let title = format!(" Network (Nexus) [{}/{} | {}] ", showing, total, sort_info);
 
-    let list = List::new(items)
+    let list = List::new(all_items)
         .block(
             Block::default()
                 .borders(Borders::ALL)

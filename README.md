@@ -1,63 +1,25 @@
 # Aperture
 
-A high-performance Windows-native diagnostic TUI for power users and developers.
-
-Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows' deep diagnostic capabilities (Processes, Services, and Network). Unlike cross-platform tools, Aperture focuses on Windows-specific pain points: file locks, service management, and process-to-socket mapping.
-
-## Features
-
-### The Locker (Process Management)
-- View all running processes with PID, name, path, CPU%, and memory usage
-- Real-time CPU and memory metrics with intelligent caching
-- **Sort by**: Name, PID, CPU usage, Memory usage
-- **Filter** processes by name, path, or PID
-- **Kill processes** (requires admin - press `K`)
-- **Find file locks** - Identify which processes are locking specific files (press `f`)
-
-### The Controller (Service Management)
-- List all Windows services with status, start type, and process ID
-- **Start/Stop services** (requires admin - press `Enter`)
-- **Sort by**: Name, Status, Service Type
-- **Filter** services by name or display name
-
-### The Nexus (Network Monitor)
-- Real-time TCP/UDP connection listing
-- Map connections to process PIDs and names
-- View connection states (ESTABLISHED, LISTENING, etc.)
-- **Sort by**: Connection State, PID, Protocol
-- **Filter** connections by address, port, or PID
-
-### UI Features
-- **Permanent sidebar** with context-aware keybindings
-- **Smart data caching** - All tabs preload for instant switching
-- **50ms navigation debounce** - Smooth cursor movement without jitter
-- **Change detection** - Only updates when data actually changes
-- **Cached metrics** - CPU/memory values persist during temporary data unavailability
+Diagnostic tui for Windows power users
 
 ## Installation
 
-### From Source
-```bash
-cd aperture
-cargo build --release
-```
+### Requirements
 
-The binary will be at `target/release/aperture.exe`.
+- Windows 10/11
+
+### Download and rune the latest release
+
+Download and run the [latest release .exe](https://github.com/stylebending/Aperture/releases/latest)
+You're all set! Run as admin to access all features.
 
 ### Run from Any Terminal (Add to PATH)
 
-After building, add aperture to your PATH to run it from any terminal:
+If you want to run `aperture` from any terminal just add Aperture to your PATH:
 
-**Option 1: Copy to existing PATH directory**
-```powershell
-# Copy to a directory already in PATH
-copy target\release\aperture.exe C:\Windows\System32\
-```
+**Option 1: Add to user PATH environment variable**
 
-**Option 2: Add to user PATH environment variable**
-```powershell
-# Add aperture's directory to your user PATH environment variable
-```
+**Option 2: Copy the Aperture.exe to existing PATH directory**
 
 Then restart your terminal and run `aperture` from anywhere!
 
@@ -116,7 +78,7 @@ aperture
 ┌────────────────────────────────────────┐
 │         Find Locking Processes         │
 ├────────────────────────────────────────┤
-│ Paths: C:\Users\Me\Documents\file.txt  │
+│ Path: C:\Users\Me\Documents\file.txt   │
 │                                        │
 │   Locking processes:                   │
 │                                        │
@@ -124,10 +86,12 @@ aperture
 │   ▶ PID:   9012  chrome.exe            │
 │     PID:  12345  excel.exe             │
 │                                        │
-│ [Enter] Search  [j/k] Navigate         │
-│ [K] Kill (admin)  [Esc] Close          │
+│ [/] Edit Path  [Enter] Search          │
+│ [j/k] Navigate  [K] Kill  [Esc] Close  │
 └────────────────────────────────────────┘
 ```
+
+**Note:** Press `/` to enter input mode and type a file path. Enter a folder path to scan all files in that directory.
 
 ## Quick Start Guide
 
@@ -136,10 +100,13 @@ aperture
 Can't delete a file because it's "in use"? Aperture can find the culprit:
 
 1. Press `f` to open the **File Lock Search** modal
-2. Type the full path to the file (e.g., `C:\Users\You\file.txt`)
-3. Press `Enter` to search
-4. See which processes have the file locked
-5. Navigate with `j`/`k` and press `K` to kill the process (requires admin)
+2. Press `/` to enter input mode
+3. Type the full path to the file (e.g., `C:\Users\You\file.txt`)
+4. Press `Enter` to search
+5. See which processes have the file locked
+6. Navigate with `j`/`k` and press `K` to kill the process (requires admin)
+
+**Tip:** Enter a folder path to scan all files in that directory and find all locks.
 
 ### Kill a Runaway Process
 
@@ -211,6 +178,10 @@ Each tab supports different sorting:
 | | `f` | Find locks | Global | Open file lock search modal |
 | **Locker** | `K` | Kill process | Locker only | Kill selected process (admin) |
 | **Controller** | `Enter` | Toggle service | Controller only | Start/stop selected service (admin) |
+| **File Lock Modal** | `/` | Edit path | Modal | Enter input mode to type path |
+| | `Enter` | Search | Modal | Execute search |
+| | `j`/`k` | Navigate | Modal | Move up/down results |
+| | `K` | Kill | Modal | Kill selected locking process |
 | **System** | `q` | Quit | Global | Exit application |
 
 ### Search Mode Keybindings
@@ -225,10 +196,15 @@ When in search mode (`/`):
 
 When file lock modal is open (`f`):
 - Type file paths (one per line)
+- `/` - Enter input mode to edit path (any key including j/k can now be typed)
 - `Enter` - Search for locking processes
-- `j`/`k` - Navigate results
+- `j`/`k` or `↑`/`↓` - Navigate results (normal mode only)
 - `K` - Kill selected process (admin)
-- `Esc` - Close modal
+- `Esc` - Close modal (or cancel input mode)
+
+**Directory Scanning:**
+- Enter a folder path to scan all files in that directory
+- Shows "Scanned X files - Found Y locks" with the count of files checked
 
 ## Configuration
 
@@ -262,11 +238,6 @@ Aperture uses direct Win32 APIs instead of WMI for maximum performance:
 - WMI queries can take 500ms-2s per call
 - Win32 APIs respond in <50ms
 - Essential for smooth TUI experience with 2-second refresh rates
-
-## Requirements
-
-- Windows 10/11
-- For full functionality (killing processes, managing services), run as Administrator
 
 ## Architecture
 
@@ -332,6 +303,39 @@ aperture/
   - Show additional process info (command line, environment, etc.)
 - [ ] Dark/light theme support
   - Currently uses terminal default colors
+
+Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows' deep diagnostic capabilities (Processes, Services, and Network). Unlike cross-platform tools, Aperture focuses on Windows-specific pain points: file locks, service management, and process-to-socket mapping.
+
+## Features
+
+### The Locker (Process Management)
+- View all running processes with PID, name, path, CPU%, and memory usage
+- Real-time CPU and memory metrics with intelligent caching
+- **Sort by**: Name, PID, CPU usage, Memory usage
+- **Filter** processes by name, path, or PID
+- **Kill processes** (requires admin - press `K`)
+- **Find file locks** - Identify which processes are locking specific files (press `f`)
+
+### The Controller (Service Management)
+- List all Windows services with status, start type, and process ID
+- **Start/Stop services** (requires admin - press `Enter`)
+- **Sort by**: Name, Status, Service Type
+- **Filter** services by name or display name
+
+### The Nexus (Network Monitor)
+- Real-time TCP/UDP connection listing
+- Map connections to process PIDs and names
+- View connection states (ESTABLISHED, LISTENING, etc.)
+- **Sort by**: Connection State, PID, Protocol
+- **Filter** connections by address, port, or PID
+
+### UI Features
+- **Vim Motions** keybindings for easy navigation
+- **Permanent sidebar** with context-aware keybindings
+- **Smart data caching** - All tabs preload for instant switching
+- **50ms navigation debounce** - Smooth cursor movement without jitter
+- **Change detection** - Only updates when data actually changes
+- **Cached metrics** - CPU/memory values persist during temporary data unavailability
 
 ## License
 

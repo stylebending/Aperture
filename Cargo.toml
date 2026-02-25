@@ -1,9 +1,9 @@
 [package]
-name = "aperture"
-version = "0.1.0"
-edition = "2021"
-description = "Windows-native diagnostic TUI for power users"
-authors = ["Winsight"]
+name = "Aperture"
+version = "0.1.1"
+edition = "2024"
+description = "Diagnostic tui for Windows power users"
+authors = ["stylebending"]
 license = "MIT"
 
 [dependencies]
@@ -21,6 +21,7 @@ windows = { version = "0.58", features = [
     "Win32_Security",
     "Win32_Storage_FileSystem",
     "Win32_System_Diagnostics_Debug",
+    "Win32_System_SystemInformation",
 ] }
 
 [profile.release]

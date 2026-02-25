@@ -53,6 +53,8 @@ pub enum Modal {
         selected: usize,
         loading: bool,
         error: Option<String>,
+        is_directory: bool,
+        files_scanned: Option<usize>,
     },
 }
 
@@ -80,6 +82,7 @@ pub struct App {
     pub search_query: String,
     pub status_message: Option<String>,
     pub modal: Option<Modal>,
+    pub handle_search_input_mode: bool,
 }
 
 impl App {
@@ -92,6 +95,7 @@ impl App {
             search_query: String::new(),
             status_message: None,
             modal: None,
+            handle_search_input_mode: false,
         }
     }
 
@@ -236,7 +240,18 @@ impl App {
             selected: 0,
             loading: false,
             error: None,
+            is_directory: false,
+            files_scanned: None,
         });
+        self.handle_search_input_mode = false;
+    }
+
+    pub fn enter_handle_search_input_mode(&mut self) {
+        self.handle_search_input_mode = true;
+    }
+
+    pub fn exit_handle_search_input_mode(&mut self) {
+        self.handle_search_input_mode = false;
     }
 
     pub fn handle_search_modal_char(&mut self, c: char) {
@@ -269,7 +284,10 @@ impl App {
         }
 
         let input_str = file_paths.join("\n");
-        let file_refs: Vec<&str> = file_paths.iter().map(|s| s.as_str()).collect();
+        let first_path = file_paths.first().map(|p| p.as_str()).unwrap_or("");
+        let path = std::path::Path::new(first_path);
+
+        let is_directory = path.is_dir();
 
         self.modal = Some(Modal::HandleSearch {
             input: input_str.clone(),
@@ -277,26 +295,56 @@ impl App {
             selected: 0,
             loading: true,
             error: None,
+            is_directory,
+            files_scanned: None,
         });
 
-        let result = sys::handle::find_locking_processes(&file_refs);
-
-        self.modal = Some(match result {
-            Ok(locking_procs) => Modal::HandleSearch {
-                input: input_str,
-                results: locking_procs,
-                selected: 0,
-                loading: false,
-                error: None,
-            },
-            Err(e) => Modal::HandleSearch {
-                input: input_str,
-                results: Vec::new(),
-                selected: 0,
-                loading: false,
-                error: Some(e.to_string()),
-            },
-        });
+        if is_directory {
+            let result = sys::handle::find_locking_processes_in_directory(first_path);
+            self.modal = Some(match result {
+                Ok((locking_procs, scanned_count)) => Modal::HandleSearch {
+                    input: input_str,
+                    results: locking_procs,
+                    selected: 0,
+                    loading: false,
+                    error: None,
+                    is_directory,
+                    files_scanned: Some(scanned_count),
+                },
+                Err(e) => Modal::HandleSearch {
+                    input: input_str,
+                    results: Vec::new(),
+                    selected: 0,
+                    loading: false,
+                    error: Some(e.to_string()),
+                    is_directory: false,
+                    files_scanned: None,
+                },
+            });
+        } else {
+            let file_refs: Vec<&str> = file_paths.iter().map(|s| s.as_str()).collect();
+            let result = sys::handle::find_locking_processes(&file_refs);
+            self.modal = Some(match result {
+                Ok(locking_procs) => Modal::HandleSearch {
+                    input: input_str,
+                    results: locking_procs,
+                    selected: 0,
+                    loading: false,
+                    error: None,
+                    is_directory,
+                    files_scanned: None,
+                },
+                Err(e) => Modal::HandleSearch {
+                    input: input_str,
+                    results: Vec::new(),
+                    selected: 0,
+                    loading: false,
+                    error: Some(e.to_string()),
+                    is_directory: false,
+                    files_scanned: None,
+                },
+            });
+        }
     }
 
     pub fn handle_search_modal_select_next(&mut self) {
