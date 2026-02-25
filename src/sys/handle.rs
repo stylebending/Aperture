@@ -199,11 +199,10 @@ pub fn find_locking_processes_in_directory(
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
-                if entry_path.is_file() {
-                    if let Some(path_str) = entry_path.to_str() {
+                if entry_path.is_file()
+                    && let Some(path_str) = entry_path.to_str() {
                         all_files.push(path_str.to_string());
                     }
-                }
             }
         }
     } else if path.is_file() {

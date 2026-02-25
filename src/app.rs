@@ -83,6 +83,7 @@ pub struct App {
     pub status_message: Option<String>,
     pub modal: Option<Modal>,
     pub handle_search_input_mode: bool,
+    pub pending_gg: bool,
 }
 
 impl App {
@@ -96,6 +97,7 @@ impl App {
             status_message: None,
             modal: None,
             handle_search_input_mode: false,
+            pending_gg: false,
         }
     }
 
@@ -151,17 +153,29 @@ impl App {
         }
     }
 
-    pub fn on_enter(&mut self) {
+    pub fn select_first(&mut self) {
         match self.current_tab {
-            Tab::Controller => {
-                if self.is_elevated {
-                    self.state
-                        .controller
-                        .toggle_selected_service(&self.search_query);
-                }
-            }
-            _ => {}
+            Tab::Locker => self.state.locker.select_first(&self.search_query),
+            Tab::Controller => self.state.controller.select_first(&self.search_query),
+            Tab::Nexus => self.state.nexus.select_first(&self.search_query),
         }
+    }
+
+    pub fn select_last(&mut self) {
+        match self.current_tab {
+            Tab::Locker => self.state.locker.select_last(&self.search_query),
+            Tab::Controller => self.state.controller.select_last(&self.search_query),
+            Tab::Nexus => self.state.nexus.select_last(&self.search_query),
+        }
+    }
+
+    pub fn on_enter(&mut self) {
+        if self.current_tab == Tab::Controller
+            && self.is_elevated {
+                self.state
+                    .controller
+                    .toggle_selected_service(&self.search_query);
+            }
     }
 
     pub fn enter_search_mode(&mut self) {
@@ -206,14 +220,13 @@ impl App {
     }
 
     pub fn show_kill_confirmation(&mut self) {
-        if self.current_tab == Tab::Locker {
-            if let Some(process) = self.state.locker.get_selected_process(&self.search_query) {
+        if self.current_tab == Tab::Locker
+            && let Some(process) = self.state.locker.get_selected_process(&self.search_query) {
                 self.modal = Some(Modal::KillConfirmation {
                     pid: process.pid,
                     name: process.name.clone(),
                 });
             }
-        }
     }
 
     pub fn confirm_kill(&mut self) {
@@ -351,35 +364,47 @@ impl App {
         if let Some(Modal::HandleSearch {
             results, selected, ..
         }) = &mut self.modal
-        {
-            if !results.is_empty() {
+            && !results.is_empty() {
                 *selected = (*selected + 1) % results.len();
             }
-        }
     }
 
     pub fn handle_search_modal_select_prev(&mut self) {
         if let Some(Modal::HandleSearch {
             results, selected, ..
         }) = &mut self.modal
-        {
-            if !results.is_empty() {
+            && !results.is_empty() {
                 *selected = (*selected + results.len() - 1) % results.len();
             }
-        }
+    }
+
+    pub fn handle_search_modal_select_first(&mut self) {
+        if let Some(Modal::HandleSearch {
+            results, selected, ..
+        }) = &mut self.modal
+            && !results.is_empty() {
+                *selected = 0;
+            }
+    }
+
+    pub fn handle_search_modal_select_last(&mut self) {
+        if let Some(Modal::HandleSearch {
+            results, selected, ..
+        }) = &mut self.modal
+            && !results.is_empty() {
+                *selected = results.len() - 1;
+            }
     }
 
     pub fn kill_selected_locking_process(&mut self) {
         if let Some(Modal::HandleSearch {
             results, selected, ..
         }) = &self.modal
-        {
-            if let Some(proc) = results.get(*selected) {
+            && let Some(proc) = results.get(*selected) {
                 let pid = proc.pid;
                 let name = proc.name.clone();
                 self.modal = Some(Modal::KillConfirmation { pid, name });
             }
-        }
     }
 
     pub fn refresh_current_tab(&mut self) {

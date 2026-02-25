@@ -9,6 +9,7 @@ pub enum SortKey {
     State,
     Pid,
     Protocol,
+    ProcessName,
 }
 
 impl SortKey {
@@ -16,7 +17,8 @@ impl SortKey {
         match self {
             SortKey::State => SortKey::Pid,
             SortKey::Pid => SortKey::Protocol,
-            SortKey::Protocol => SortKey::State,
+            SortKey::Protocol => SortKey::ProcessName,
+            SortKey::ProcessName => SortKey::State,
         }
     }
 
@@ -25,6 +27,7 @@ impl SortKey {
             SortKey::State => "State",
             SortKey::Pid => "PID",
             SortKey::Protocol => "Proto",
+            SortKey::ProcessName => "Process",
         }
     }
 }
@@ -186,6 +189,18 @@ impl NexusState {
                     }
                 });
             }
+            SortKey::ProcessName => {
+                self.connections.sort_by(|a, b| {
+                    let a_name = a.process_name.as_deref().unwrap_or("");
+                    let b_name = b.process_name.as_deref().unwrap_or("");
+                    let cmp = a_name.cmp(b_name);
+                    if self.sort_order == SortOrder::Descending {
+                        cmp.reverse()
+                    } else {
+                        cmp
+                    }
+                });
+            }
         }
     }
 
@@ -209,7 +224,7 @@ impl NexusState {
                 self.list_state.select(Some(new_idx));
             } else if !filtered.is_empty() {
                 self.list_state.select(Some(0));
-                self.selected_connection_key = filtered.get(0).and_then(|&i| {
+                self.selected_connection_key = filtered.first().and_then(|&i| {
                     self.connections.get(i).map(|c| {
                         (
                             c.pid,
@@ -226,7 +241,7 @@ impl NexusState {
             }
         } else if !self.connections.is_empty() {
             self.list_state.select(Some(0));
-            self.selected_connection_key = self.connections.get(0).map(|c| {
+            self.selected_connection_key = self.connections.first().map(|c| {
                 (
                     c.pid,
                     c.local_addr.clone(),
@@ -363,7 +378,7 @@ impl NexusState {
         }
         let i = self.list_state.selected().unwrap_or(0);
         let page_size = 10;
-        let new_idx = if i >= page_size { i - page_size } else { 0 };
+        let new_idx = i.saturating_sub(page_size);
         self.list_state.select(Some(new_idx));
         self.selected_connection_key = filtered.get(new_idx).and_then(|&idx| {
             self.connections.get(idx).map(|c| {
@@ -399,5 +414,44 @@ impl NexusState {
                 )
             })
         });
+    }
+
+    pub fn select_first(&mut self, search_query: &str) {
+        self.mark_navigation();
+        let filtered = self.get_filtered_indices(search_query);
+        if !filtered.is_empty() {
+            self.list_state.select(Some(0));
+            self.selected_connection_key = filtered.first().and_then(|&idx| {
+                self.connections.get(idx).map(|c| {
+                    (
+                        c.pid,
+                        c.local_addr.clone(),
+                        c.local_port,
+                        c.remote_addr.clone(),
+                        c.remote_port,
+                    )
+                })
+            });
+        }
+    }
+
+    pub fn select_last(&mut self, search_query: &str) {
+        self.mark_navigation();
+        let filtered = self.get_filtered_indices(search_query);
+        if !filtered.is_empty() {
+            let last_idx = filtered.len() - 1;
+            self.list_state.select(Some(last_idx));
+            self.selected_connection_key = filtered.get(last_idx).and_then(|&idx| {
+                self.connections.get(idx).map(|c| {
+                    (
+                        c.pid,
+                        c.local_addr.clone(),
+                        c.local_port,
+                        c.remote_addr.clone(),
+                        c.remote_port,
+                    )
+                })
+            });
+        }
     }
 }

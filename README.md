@@ -8,10 +8,10 @@ Diagnostic tui for Windows power users
 
 - Windows 10/11
 
-### Download and rune the latest release
+### Download and run the latest release
 
 Download and run the [latest release .exe](https://github.com/stylebending/Aperture/releases/latest)
-You're all set! Run as admin to access all features.
+That's all! Run as admin to access all features.
 
 ### Run from Any Terminal (Add to PATH)
 
@@ -140,6 +140,8 @@ Can't delete a file because it's "in use"? Aperture can find the culprit:
 - `j`/`k` or `↑`/`↓` - Move one item at a time
 - `Ctrl+D` - Page down (jump 10 items)
 - `Ctrl+U` - Page up (jump 10 items)
+- `gg` - Jump to first item
+- `G` - Jump to last item
 - `Tab`/`Shift+Tab` - Switch between tabs
 
 ### Sort Data
@@ -157,7 +159,7 @@ Each tab supports different sorting:
 - Default: Status ascending (Running first)
 
 **Nexus (Connections):**
-- Press `s` to cycle: State → PID → Protocol
+- Press `s` to cycle: State → PID → Protocol → Process
 - Press `S` to toggle order
 - Default: State ascending (ESTABLISHED first)
 
@@ -170,6 +172,8 @@ Each tab supports different sorting:
 | | `↑` / `↓` | Navigate | Lists | Alternative to j/k |
 | | `Ctrl+D` | Page down | Lists | Jump down 10 items |
 | | `Ctrl+U` | Page up | Lists | Jump up 10 items |
+| | `gg` | Jump to first | Lists | Jump to first item |
+| | `G` | Jump to last | Lists | Jump to last item |
 | **Actions** | `/` | Toggle search | Global | Enter/exit search mode |
 | | `Esc` | Clear/Cancel | Global | Clear filter, exit search, or close modal |
 | | `s` | Cycle sort | Global | Change sort key (Name, PID, Status, etc.) |
@@ -326,8 +330,8 @@ Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows'
 - Real-time TCP/UDP connection listing
 - Map connections to process PIDs and names
 - View connection states (ESTABLISHED, LISTENING, etc.)
-- **Sort by**: Connection State, PID, Protocol
-- **Filter** connections by address, port, or PID
+- **Sort by**: Connection State, PID, Protocol, Process Name
+- **Filter** connections by address, port, PID, or process name
 
 ### UI Features
 - **Vim Motions** keybindings for easy navigation

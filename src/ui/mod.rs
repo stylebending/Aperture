@@ -148,6 +148,10 @@ fn render_keybindings_sidebar(f: &mut Frame, app: &App, area: Rect) {
             Span::styled(" Page", action_style),
         ]),
         Line::from(vec![
+            Span::styled("gg/G", key_style),
+            Span::styled(" First/Last", action_style),
+        ]),
+        Line::from(vec![
             Span::styled("Tab", key_style),
             Span::styled("  Switch", action_style),
         ]),
@@ -369,7 +373,7 @@ fn render_kill_confirmation(f: &mut Frame, pid: u32, name: &str) {
         )
         .alignment(Alignment::Center);
 
-    f.render_widget(Clear::default(), area);
+    f.render_widget(Clear, area);
     f.render_widget(paragraph, area);
 }
 
@@ -509,7 +513,7 @@ fn render_handle_search_modal(
             .title_style(Style::default().fg(Color::Cyan)),
     );
 
-    f.render_widget(Clear::default(), area);
+    f.render_widget(Clear, area);
     f.render_widget(paragraph, area);
 }
 

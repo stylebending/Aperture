@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::mem;
+use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
 use windows::core::PWSTR;
 use windows::Win32::Foundation::{CloseHandle, FILETIME};
@@ -15,7 +16,6 @@ use windows::Win32::System::Threading::{
 };
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct ProcessInfo {
     pub pid: u32,
     pub name: String,
@@ -27,20 +27,15 @@ pub struct ProcessInfo {
     pub last_memory_mb: f64,
 }
 
-static mut PREV_CPU_TIMES: Option<HashMap<u32, (u64, Instant)>> = None;
-static mut NUM_CPUS: Option<u32> = None;
+static PREV_CPU_TIMES: OnceLock<Mutex<HashMap<u32, (u64, Instant)>>> = OnceLock::new();
+static NUM_CPUS: OnceLock<u32> = OnceLock::new();
 
 fn get_num_cpus() -> u32 {
-    unsafe {
-        if let Some(n) = NUM_CPUS {
-            return n;
-        }
+    *NUM_CPUS.get_or_init(|| unsafe {
         let mut sys_info: SYSTEM_INFO = SYSTEM_INFO::default();
         GetSystemInfo(&mut sys_info);
-        let n = sys_info.dwNumberOfProcessors;
-        NUM_CPUS = Some(n);
-        n
-    }
+        sys_info.dwNumberOfProcessors
+    })
 }
 
 pub fn is_elevated() -> bool {
@@ -149,8 +144,8 @@ pub fn update_process_metrics(
 ) -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let now = Instant::now();
-        #[allow(static_mut_refs)]
-        let prev_times = PREV_CPU_TIMES.get_or_insert_with(HashMap::new);
+        let prev_times = PREV_CPU_TIMES.get_or_init(|| Mutex::new(HashMap::new()));
+        let mut prev_times_guard = prev_times.lock().unwrap();
         let mut new_times: HashMap<u32, (u64, Instant)> = HashMap::new();
 
         for process in processes.iter_mut() {
@@ -189,7 +184,7 @@ pub fn update_process_metrics(
                     let total_time = filetime_to_u64(kernel_time) + filetime_to_u64(user_time);
                     new_times.insert(process.pid, (total_time, now));
 
-                    if let Some(&(prev_time, prev_instant)) = prev_times.get(&process.pid) {
+                    if let Some(&(prev_time, prev_instant)) = prev_times_guard.get(&process.pid) {
                         let elapsed = now.duration_since(prev_instant).as_millis() as u64;
                         if elapsed > 0 {
                             let delta = total_time.saturating_sub(prev_time);
@@ -197,7 +192,7 @@ pub fn update_process_metrics(
                             let cpu_percent =
                                 ((delta as f64 / 10_000_000.0) / (elapsed as f64 / 1000.0) * 100.0)
                                     / num_cpus;
-                            process.cpu_usage = (cpu_percent.max(0.0).min(100.0)) as f32;
+                            process.cpu_usage = cpu_percent.clamp(0.0, 100.0) as f32;
                             process.last_cpu_usage = process.cpu_usage;
                         }
                     } else {
@@ -213,7 +208,7 @@ pub fn update_process_metrics(
             }
         }
 
-        *prev_times = new_times;
+        *prev_times_guard = new_times;
     }
 
     Ok(())

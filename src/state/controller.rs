@@ -194,8 +194,7 @@ impl ControllerState {
                 self.list_state.select(Some(new_idx));
             } else if !filtered.is_empty() {
                 self.list_state.select(Some(0));
-                self.selected_service_name = filtered
-                    .get(0)
+                self.selected_service_name = filtered.first()
                     .and_then(|&i| self.services.get(i))
                     .map(|s| s.service_name.clone());
             } else {
@@ -204,7 +203,7 @@ impl ControllerState {
             }
         } else if !self.services.is_empty() {
             self.list_state.select(Some(0));
-            self.selected_service_name = self.services.get(0).map(|s| s.service_name.clone());
+            self.selected_service_name = self.services.first().map(|s| s.service_name.clone());
         }
     }
 
@@ -313,7 +312,7 @@ impl ControllerState {
         }
         let i = self.list_state.selected().unwrap_or(0);
         let page_size = 10;
-        let new_idx = if i >= page_size { i - page_size } else { 0 };
+        let new_idx = i.saturating_sub(page_size);
         self.list_state.select(Some(new_idx));
         self.selected_service_name = filtered
             .get(new_idx)
@@ -337,15 +336,38 @@ impl ControllerState {
             .map(|s| s.service_name.clone());
     }
 
+    pub fn select_first(&mut self, search_query: &str) {
+        self.mark_navigation();
+        let filtered = self.get_filtered_indices(search_query);
+        if !filtered.is_empty() {
+            self.list_state.select(Some(0));
+            self.selected_service_name = filtered
+                .first()
+                .and_then(|&idx| self.services.get(idx))
+                .map(|s| s.service_name.clone());
+        }
+    }
+
+    pub fn select_last(&mut self, search_query: &str) {
+        self.mark_navigation();
+        let filtered = self.get_filtered_indices(search_query);
+        if !filtered.is_empty() {
+            let last_idx = filtered.len() - 1;
+            self.list_state.select(Some(last_idx));
+            self.selected_service_name = filtered
+                .get(last_idx)
+                .and_then(|&idx| self.services.get(idx))
+                .map(|s| s.service_name.clone());
+        }
+    }
+
     pub fn toggle_selected_service(&mut self, search_query: &str) {
         let filtered = self.get_filtered_indices(search_query);
-        if let Some(idx) = self.list_state.selected() {
-            if let Some(&original_idx) = filtered.get(idx) {
-                if let Some(service) = self.services.get(original_idx) {
+        if let Some(idx) = self.list_state.selected()
+            && let Some(&original_idx) = filtered.get(idx)
+                && let Some(service) = self.services.get(original_idx) {
                     let _ =
                         crate::sys::service::toggle_service(&service.service_name, &service.status);
                 }
-            }
-        }
     }
 }

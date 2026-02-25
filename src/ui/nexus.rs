@@ -1,7 +1,8 @@
 use ratatui::{
-    layout::Rect,
+    layout::{Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, List, ListItem},
+    text::{Line, Span},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
 
@@ -31,33 +32,44 @@ pub fn render(f: &mut Frame, state: &mut NexusState, search_query: &str, area: R
         })
         .collect();
 
-    let header = ListItem::new(format!(
-        "{:6} {:5} {:22} {:22} {:12} {}",
-        "PID", "Proto", "Local", "Remote", "State", "Process"
-    ))
-    .style(
-        Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD),
-    );
-    let mut all_items: Vec<ListItem> = vec![header];
-    all_items.extend(items);
-
     // Build title with filter and sort info
     let total = state.connections.len();
     let showing = filtered.len();
     let sort_info = format!("{} {}", state.sort_key.as_str(), state.sort_order.as_str());
     let title = format!(" Network (Nexus) [{}/{} | {}] ", showing, total, sort_info);
 
-    let list = List::new(all_items)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(title)
-                .title_style(Style::default().fg(Color::Cyan)),
-        )
-        .highlight_style(Style::default().bg(Color::DarkGray));
+    // Create inner area inside the border for the header
+    let inner_area = area.inner(Margin::new(1, 1));
+
+    // Split inner area into header (1 line) and list (remaining space)
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(1), Constraint::Min(0)])
+        .split(inner_area);
+
+    // Render header as non-selectable text in the first line of inner area
+    let header_text = format!(
+        "{:6} {:5} {:22} {:22} {:12} {}",
+        "PID", "Proto", "Local", "Remote", "State", "Process"
+    );
+    let header = Paragraph::new(Line::from(vec![Span::styled(
+        header_text,
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    )]));
+    f.render_widget(header, chunks[0]);
+
+    // Render list block with border (full area)
+    let list_block = Block::default()
+        .borders(Borders::ALL)
+        .title(title)
+        .title_style(Style::default().fg(Color::Cyan));
+    f.render_widget(list_block.clone(), area);
+
+    // Render list items in the remaining space (below header, inside border)
+    let list = List::new(items).highlight_style(Style::default().bg(Color::DarkGray));
 
     // Pass mutable reference directly (not cloned) so selection is preserved
-    f.render_stateful_widget(list, area, &mut state.list_state);
+    f.render_stateful_widget(list, chunks[1], &mut state.list_state);
 }

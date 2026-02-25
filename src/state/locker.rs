@@ -176,7 +176,7 @@ impl LockerState {
                     let cmp = a_val
                         .partial_cmp(&b_val)
                         .unwrap_or(std::cmp::Ordering::Equal);
-                    if self.sort_order == SortOrder::Ascending {
+                    if self.sort_order == SortOrder::Descending {
                         cmp.reverse()
                     } else {
                         cmp
@@ -198,7 +198,7 @@ impl LockerState {
                     let cmp = a_val
                         .partial_cmp(&b_val)
                         .unwrap_or(std::cmp::Ordering::Equal);
-                    if self.sort_order == SortOrder::Ascending {
+                    if self.sort_order == SortOrder::Descending {
                         cmp.reverse()
                     } else {
                         cmp
@@ -219,7 +219,7 @@ impl LockerState {
             } else if !filtered.is_empty() {
                 self.list_state.select(Some(0));
                 self.selected_pid = filtered
-                    .get(0)
+                    .first()
                     .and_then(|&i| self.processes.get(i))
                     .map(|p| p.pid);
             } else {
@@ -228,7 +228,7 @@ impl LockerState {
             }
         } else if !self.processes.is_empty() {
             self.list_state.select(Some(0));
-            self.selected_pid = self.processes.get(0).map(|p| p.pid);
+            self.selected_pid = self.processes.first().map(|p| p.pid);
         }
     }
 
@@ -342,7 +342,7 @@ impl LockerState {
         }
         let i = self.list_state.selected().unwrap_or(0);
         let page_size = 10;
-        let new_idx = if i >= page_size { i - page_size } else { 0 };
+        let new_idx = i.saturating_sub(page_size);
         self.list_state.select(Some(new_idx));
         self.selected_pid = filtered
             .get(new_idx)
@@ -364,6 +364,31 @@ impl LockerState {
             .get(new_idx)
             .and_then(|&idx| self.processes.get(idx))
             .map(|p| p.pid);
+    }
+
+    pub fn select_first(&mut self, search_query: &str) {
+        self.mark_navigation();
+        let filtered = self.get_filtered_indices(search_query);
+        if !filtered.is_empty() {
+            self.list_state.select(Some(0));
+            self.selected_pid = filtered
+                .first()
+                .and_then(|&idx| self.processes.get(idx))
+                .map(|p| p.pid);
+        }
+    }
+
+    pub fn select_last(&mut self, search_query: &str) {
+        self.mark_navigation();
+        let filtered = self.get_filtered_indices(search_query);
+        if !filtered.is_empty() {
+            let last_idx = filtered.len() - 1;
+            self.list_state.select(Some(last_idx));
+            self.selected_pid = filtered
+                .get(last_idx)
+                .and_then(|&idx| self.processes.get(idx))
+                .map(|p| p.pid);
+        }
     }
 
     pub fn get_selected_process(&self, search_query: &str) -> Option<&ProcessInfo> {

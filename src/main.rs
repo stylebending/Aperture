@@ -114,15 +114,12 @@ async fn run_app(
             _ = async {
                 event::poll(Duration::from_millis(TICK_RATE_MS)).ok();
             } => {
-                if event::poll(Duration::from_millis(0))? {
-                    if let Event::Key(key) = event::read()? {
-                        if key.kind == KeyEventKind::Press {
-                            if handle_key_event(app, key)? {
+                if event::poll(Duration::from_millis(0))?
+                    && let Event::Key(key) = event::read()?
+                        && key.kind == KeyEventKind::Press
+                            && handle_key_event(app, key)? {
                                 return Ok(());
                             }
-                        }
-                    }
-                }
             }
         }
     }
@@ -166,29 +163,52 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
                 } else {
                     match code {
                         KeyCode::Esc | KeyCode::Char('q') => {
+                            app.pending_gg = false;
                             app.cancel_modal();
                         }
                         KeyCode::Char('/') => {
+                            app.pending_gg = false;
                             app.enter_handle_search_input_mode();
                         }
                         KeyCode::Enter => {
+                            app.pending_gg = false;
                             app.execute_handle_search();
                         }
                         KeyCode::Down | KeyCode::Char('j') => {
+                            app.pending_gg = false;
                             app.handle_search_modal_select_next();
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
+                            app.pending_gg = false;
                             app.handle_search_modal_select_prev();
                         }
+                        KeyCode::Char('g') => {
+                            if app.pending_gg {
+                                // Second 'g' - jump to first
+                                app.handle_search_modal_select_first();
+                                app.pending_gg = false;
+                            } else {
+                                // First 'g' - set flag
+                                app.pending_gg = true;
+                            }
+                        }
+                        KeyCode::Char('G') => {
+                            app.pending_gg = false;
+                            app.handle_search_modal_select_last();
+                        }
                         KeyCode::Char('K') => {
+                            app.pending_gg = false;
                             if app.is_elevated {
                                 app.kill_selected_locking_process();
                             }
                         }
                         KeyCode::Backspace => {
+                            app.pending_gg = false;
                             app.handle_search_modal_backspace();
                         }
-                        _ => {}
+                        _ => {
+                            app.pending_gg = false;
+                        }
                     }
                 }
             }
@@ -260,12 +280,29 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
             // Shift+S - toggle sort order
             app.toggle_sort_order();
         }
+        KeyCode::Char('g') => {
+            if app.pending_gg {
+                // Second 'g' - jump to first
+                app.select_first();
+                app.pending_gg = false;
+            } else {
+                // First 'g' - set flag
+                app.pending_gg = true;
+            }
+        }
+        KeyCode::Char('G') => {
+            app.pending_gg = false;
+            app.select_last();
+        }
         KeyCode::Esc => {
+            app.pending_gg = false;
             if app.has_active_filter() {
                 app.clear_current_filter();
             }
         }
-        _ => {}
+        _ => {
+            app.pending_gg = false;
+        }
     }
 
     Ok(false)
