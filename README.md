@@ -15,7 +15,7 @@
 </a>
 
 <a href="https://github.com/stylebending/Aperture/releases">
-  <img src="https://img.shields.io/github/downloads/stylebending/Aperture/total?color=darkgreen&logo=github&label=Total%20Downloads&style=for-the-badge&labelColor=darkgreen">
+  <img src="https://img.shields.io/github/downloads/stylebending/Aperture/total?color=darkgreen&logo=github&label=GitHub%20Downloads&style=for-the-badge&labelColor=darkgreen">
 </a>
 
 </p>
