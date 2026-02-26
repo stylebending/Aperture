@@ -23,6 +23,14 @@ If you want to run `aperture` from any terminal just add Aperture to your PATH:
 
 Then restart your terminal and run `aperture` from anywhere!
 
+### Installation through package managers
+
+- WinGet command: `winget install Aperture`
+- Scoop command: `scoop install https://raw.githubusercontent.com/stylebending/scoop-bucket/refs/heads/main/bucket/Aperture.json`
+- Chocolatey command: coming very soon!
+
+Installing with these package managers automatically adds Aperture to your path. After running one of those installation commands, just close and re-open your terminal and you'll immediately be able to run `aperture` from any terminal.
+
 ## Usage
 
 ```bash
