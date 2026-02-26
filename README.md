@@ -28,7 +28,8 @@ Then restart your terminal and run `aperture` from anywhere!
 ### WinGet
 `winget install Aperture`
 
-### Scoop (requires 100 GitHub stars to be in their official Extras bucket, hence this custom command)
+### Scoop
+**Scoop requires 100 GitHub stars to be in their Extras bucket, for now please use this installation command:**
 `scoop install https://raw.githubusercontent.com/stylebending/scoop-bucket/refs/heads/main/bucket/Aperture.json`
 
 ### Chocolatey
