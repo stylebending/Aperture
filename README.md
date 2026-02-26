@@ -26,7 +26,8 @@ Then restart your terminal and run `aperture` from anywhere!
 ### Installation through package managers
 
 - WinGet command: `winget install Aperture`
-- Scoop command: `scoop install https://raw.githubusercontent.com/stylebending/scoop-bucket/refs/heads/main/bucket/Aperture.json`
+- Scoop command (scoop requires 100 GitHub stars to be in their official Extras bucket, hence this custom command):
+`scoop install https://raw.githubusercontent.com/stylebending/scoop-bucket/refs/heads/main/bucket/Aperture.json`
 - Chocolatey command: coming very soon!
 
 Installing with these package managers automatically adds Aperture to your path. After running one of those installation commands, just close and re-open your terminal and you'll immediately be able to run `aperture` from any terminal.
