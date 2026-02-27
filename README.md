@@ -1,4 +1,8 @@
-<img align="center" width="150px" heigth="150px" src="ApertureLogo.png">
+<p align="center">
+
+<img width="150px" heigth="150px" src="ApertureLogo.png">
+
+</p>
 
 <h3 align="center">Aperture</h3>
 
