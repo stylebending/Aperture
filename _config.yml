@@ -5,3 +5,4 @@ plugins:
 style: dark
 title: Aperture
 description: Windows System Diagnostic TUI
+header_pages: []
