@@ -18,7 +18,7 @@
 
 <p align="center"><a href="#quick-start-guide"><img src="https://img.shields.io/badge/🚀-Quick%20Start%20Guide-darkblue?style=for-the-badge&labelColor=darkblue"></a> <a href="#keybindings"><img src="https://img.shields.io/badge/🎹-Keybindings-darkblue?style=for-the-badge&labelColor=darkblue"></a></p>
 
-## Installation
+## Installation (standalone/portable)
 
 ### Requirements
 
@@ -26,16 +26,14 @@
 
 ### Download and run the latest release
 
-Download and run the [latest release .exe](https://github.com/stylebending/Aperture/releases/latest)
+Download and run the [latest release .exe](https://github.com/stylebending/Aperture/releases/latest)  
 That's all! Run as admin to access all features.
 
 ### Run from Any Terminal (Add to PATH)
 
-If you want to run `aperture` from any terminal just add Aperture to your PATH:
+If you want to run the `aperture` command from any terminal:
 
-**Option 1: Add to user PATH environment variable**
-
-**Option 2: Copy the Aperture.exe to existing PATH directory**
+**Just move Aperture.exe to a folder that is already in your user's PATH**
 
 Then restart your terminal and run `aperture` from anywhere!
 
