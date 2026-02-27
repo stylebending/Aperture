@@ -15,11 +15,9 @@
 <a href="https://github.com/stylebending/Aperture/releases">
   <img src="https://img.shields.io/github/v/release/stylebending/Aperture?style=for-the-badge&color=darkgreen&logo=git&logoColor=white&label=Release&labelColor=darkgreen">
 </a>
-
 <a href="https://github.com/stylebending/Aperture/releases">
   <img src="https://img.shields.io/github/actions/workflow/status/stylebending/Aperture/.github/workflows/release.yml?style=for-the-badge&color=darkgreen&logo=github&logoColor=white&label=Build&labelColor=darkgreen">
 </a>
-
 <a href="https://github.com/stylebending/Aperture/releases">
   <img src="https://img.shields.io/github/downloads/stylebending/Aperture/total?color=darkgreen&logo=github&label=GitHub%20Downloads&style=for-the-badge&labelColor=darkgreen">
 </a>
@@ -35,7 +33,6 @@
 <a href="https://github.com/stylebending/Aperture?tab=readme-ov-file#quick-start-guide">
   <img src="https://img.shields.io/badge/🚀-Quick%20Start%20Guide-darkblue?style=for-the-badge&labelColor=darkblue">
 </a>
-
 <a href="https://github.com/stylebending/Aperture?tab=readme-ov-file#keybindings">
   <img src="https://img.shields.io/badge/🎹-Keybindings-darkblue?style=for-the-badge&labelColor=darkblue">
 </a>
