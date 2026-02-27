@@ -1,3 +1,5 @@
+<img align="center" src="ApertureLogo.png">
+
 <h3 align="center">Aperture</h3>
 
 <h4 align="center">Diagnostic tui for Windows power users</h4>
