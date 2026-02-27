@@ -137,7 +137,7 @@ aperture
 │   Locking processes:                   │
 │                                        │
 │     PID:   5678  notepad.exe           │
-│   ▶ PID:   9012  chrome.exe           │
+│   ▶ PID:   9012  chrome.exe            │
 │     PID:  12345  excel.exe             │
 │                                        │
 │ [/] Edit Path  [Enter] Search          │
