@@ -20,30 +20,20 @@
 
 ## Installation (standalone/portable)
 
-### Requirements
-
-- Windows 10/11
-
-### Download and run the latest release
-
-Download and run the [latest release .exe](https://github.com/stylebending/Aperture/releases/latest)  
+### Download and run the [latest release (1 MB .exe file)](https://github.com/stylebending/Aperture/releases/latest)
 That's all! Run as admin to access all features.
 
-### Run from Any Terminal (Add to PATH)
-
-If you want to run the `aperture` command from any terminal:
-
-**Just move Aperture.exe to a folder that is already in your user's PATH**
-
+### If you want to run the `aperture` command from any terminal:
+**Just move Aperture.exe to a folder that is already in your user's PATH**  
 Then restart your terminal and run `aperture` from anywhere!
 
-## Installation through package managers
+## Installation (package managers)
 
 ### WinGet
 `winget install Aperture`
 
 ### Scoop
-Scoop requires 100 GitHub stars to be in their Extras bucket, for now please use this installation command:  
+Scoop requires 100 GitHub stars or 2000 downloads to be in their Extras bucket, for now please use this installation command:  
 `scoop install https://raw.githubusercontent.com/stylebending/scoop-bucket/refs/heads/main/bucket/Aperture.json`
 
 ### Chocolatey
