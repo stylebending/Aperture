@@ -20,7 +20,7 @@
 
 ## Installation (standalone/portable)
 
-### Download and run the [latest release (1 MB .exe file)](https://github.com/stylebending/Aperture/releases/latest)
+### Download and run the [latest release (1 MB executable)](https://github.com/stylebending/Aperture/releases/latest)
 That's all! Run as admin to access all features.
 
 ### If you want to run the `aperture` command from any terminal:
