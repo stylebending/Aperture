@@ -30,7 +30,7 @@ Then restart your terminal and run `aperture` from anywhere!
 ## Installation (package managers)
 
 ### WinGet
-`winget install Aperture`
+`winget install aperture`
 
 ### Scoop
 Scoop requires 100 GitHub stars or 2000 downloads to be in their Extras bucket, for now please use this installation command:  
