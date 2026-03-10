@@ -11,8 +11,7 @@ use windows::Win32::System::ProcessStatus::{
 use windows::Win32::System::SystemInformation::{GetSystemInfo, SYSTEM_INFO};
 use windows::Win32::System::Threading::{
     GetCurrentProcess, GetProcessTimes, OpenProcess, OpenProcessToken, QueryFullProcessImageNameW,
-    PROCESS_NAME_FORMAT, PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION,
-    PROCESS_TERMINATE, PROCESS_VM_READ,
+    PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
 };
 
 #[derive(Debug, Clone)]
@@ -149,11 +148,7 @@ pub fn update_process_metrics(
         let mut new_times: HashMap<u32, (u64, Instant)> = HashMap::new();
 
         for process in processes.iter_mut() {
-            let handle = OpenProcess(
-                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                false,
-                process.pid,
-            );
+            let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process.pid);
 
             if let Ok(handle) = handle {
                 let mut creation_time = FILETIME::default();
@@ -208,7 +203,11 @@ pub fn update_process_metrics(
             }
         }
 
-        *prev_times_guard = new_times;
+        // Merge new times into existing history instead of replacing
+        // This preserves CPU history for processes that couldn't be accessed temporarily
+        for (pid, time_data) in new_times {
+            prev_times_guard.insert(pid, time_data);
+        }
     }
 
     Ok(())

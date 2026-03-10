@@ -443,6 +443,13 @@ impl App {
     pub fn update_metrics(&mut self) {
         // Update metrics for all processes, not just current tab
         let _ = sys::process::update_process_metrics(&mut self.state.locker.processes);
+        // Re-sort if sorted by metrics that change dynamically
+        if matches!(
+            self.state.locker.sort_key,
+            state::locker::SortKey::Memory | state::locker::SortKey::Cpu
+        ) {
+            self.state.locker.sort_processes();
+        }
     }
 
     pub fn cycle_sort_key(&mut self) {

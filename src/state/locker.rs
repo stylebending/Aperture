@@ -139,7 +139,7 @@ impl LockerState {
         self.update_selection_from_pid();
     }
 
-    fn sort_processes(&mut self) {
+    pub fn sort_processes(&mut self) {
         match self.sort_key {
             SortKey::Name => {
                 self.processes.sort_by(|a, b| {
@@ -296,9 +296,33 @@ impl LockerState {
             return;
         }
 
+        // Preserve cached metric values from existing processes to prevent "-" display
+        // during the brief window before metrics are updated
+        let cached_values: std::collections::HashMap<u32, (f32, f32, f64)> = self
+            .processes
+            .iter()
+            .map(|p| (p.pid, (p.cpu_usage, p.last_cpu_usage, p.last_memory_mb)))
+            .collect();
+
+        // Copy cached values to new processes that still exist
+        let mut processes = processes;
+        for process in &mut processes {
+            if let Some((cpu, last_cpu, mem)) = cached_values.get(&process.pid) {
+                process.cpu_usage = *cpu;
+                process.last_cpu_usage = *last_cpu;
+                process.last_memory_mb = *mem;
+            }
+        }
+
         self.processes = processes;
         self.sort_processes();
-        self.update_selection_from_pid();
+        // Note: Don't update selection during background updates to prevent cursor jumps
+        // Selection is only updated on user-initiated actions (sort change, navigation, etc.)
+
+        // Initialize selection on first load (when is_initial_load is still true)
+        if self.is_initial_load && !self.processes.is_empty() {
+            self.update_selection_from_pid();
+        }
 
         // Mark initial load as complete after first successful update
         self.is_initial_load = false;
