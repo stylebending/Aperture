@@ -111,6 +111,16 @@ aperture
 
 **Note:** Press `/` to enter input mode and type a file path. Enter a folder path to scan all files in that directory.
 
+## Acknowledgements
+
+### This project wouldn't be possible without:
+- [**Rust**](https://rust-lang.org/) - Systems programming language making Windows API access safe and fast
+- [**ratatui**](https://github.com/ratatui-org/ratatui) - The beautiful terminal user interface framework powering Aperture
+- [**crossterm**](https://github.com/crossterm-rs/crossterm) - Cross-platform terminal manipulation and event handling
+- [**tokio**](https://github.com/tokio-rs/tokio) - The asynchronous runtime enabling responsive UI updates
+- [**windows-rs**](https://github.com/microsoft/windows-rs) - Microsoft's official Windows API bindings for Rust
+- [**Vim**](https://www.vim.org/) / [**Neovim**](https://neovim.io/) - For the motion-based navigation philosophy
+
 ## Quick Start Guide
 
 ### Find What's Locking a File
