@@ -19,7 +19,7 @@
 <p align="center"><a href="#quick-start-guide"><img src="https://img.shields.io/badge/🚀-Quick%20Start%20Guide-darkblue?style=for-the-badge&labelColor=darkblue"></a> <a href="#keybindings"><img src="https://img.shields.io/badge/🎹-Keybindings-darkblue?style=for-the-badge&labelColor=darkblue"></a></p>
 
 <h3 align="center">Quick Look</h3>
-![Aperture](https://i.imgur.com/guehDnt.gif)
+<p align="center"><video width="640" controls><source src="https://i.imgur.com/guehDnt.gif"></video></p>
 
 ## Installation (standalone/portable)
 
