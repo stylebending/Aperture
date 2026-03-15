@@ -19,9 +19,7 @@
 <p align="center"><a href="#quick-start-guide"><img src="https://img.shields.io/badge/🚀-Quick%20Start%20Guide-darkblue?style=for-the-badge&labelColor=darkblue"></a> <a href="#keybindings"><img src="https://img.shields.io/badge/🎹-Keybindings-darkblue?style=for-the-badge&labelColor=darkblue"></a></p>
 
 <h3 align="center">Quick Look</h3>
-<p align="center"><video width="640" controls>
-<source src="https://i.imgur.com/0CqaN2o.mp4" type="video/mp4">
-</video></p>
+<p align="center"></p>
 
 ## Installation (standalone/portable)
 
