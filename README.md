@@ -18,9 +18,6 @@
 
 <p align="center"><a href="#quick-start-guide"><img src="https://img.shields.io/badge/🚀-Quick%20Start%20Guide-darkblue?style=for-the-badge&labelColor=darkblue"></a> <a href="#keybindings"><img src="https://img.shields.io/badge/🎹-Keybindings-darkblue?style=for-the-badge&labelColor=darkblue"></a></p>
 
-<h3 align="center">Quick Look</h3>
-<p align="center"><video width="640" controls><source src="https://i.imgur.com/guehDnt.gif"></video></p>
-
 ## Installation (standalone/portable)
 
 ### Download and run the [latest release (1 MB executable)](https://github.com/stylebending/Aperture/releases/latest)
@@ -39,6 +36,9 @@ Then restart your terminal and run `aperture` from anywhere!
 Scoop requires 100 GitHub stars or 2000 downloads to be in their Extras bucket, for now please use this installation command:  
 `scoop install https://raw.githubusercontent.com/stylebending/scoop-bucket/refs/heads/main/bucket/Aperture.json`
 
+### Chocolatey
+`Coming very soon!`
+
 Installing with these package managers automatically adds Aperture to your path. After running one of those installation commands, just close and re-open your terminal and you'll immediately be able to run `aperture` from any terminal.
 
 ## Usage
@@ -46,6 +46,70 @@ Installing with these package managers automatically adds Aperture to your path.
 ```bash
 aperture
 ```
+
+### Screenshots
+
+**Locker Tab - Process Management**
+```
+┌────────────────────────────────────────┬───────────────────┐
+│ Aperture [Locker] [Controller] [Nexus] │ Keys              │
+├────────────────────────────────────────┼───────────────────┤
+│ → Find and kill processes holding file │ Navigation        │
+│   locks                                │ j/k     Move      │
+│                                        │ ↑/↓     Move      │
+│ ┌────────────────────────────────────┐ │ C-d/u   Page      │
+│ │ Processes (Locker) [CPU▼] [45/230] │ │ Tab     SwitchTab │
+│ │                                    │ │                   │
+│ │ 1234  chrome.exe   15.2%   245.6MB │ │ Actions           │
+│ │ 5678  firefox.exe   8.1%   189.2MB │ │ /       Search    │
+│ │ 9012  notepad.exe   0.5%     4.2MB │ │ s/S     Sort      │
+│ │ 3456  code.exe      3.2%    56.8MB │ │ f       FindLocks │
+│ │ 7890  explorer.exe  2.1%    78.3MB │ │ K       Kill      │
+│ │ ...                                │ │ r       Refresh   │
+│ └────────────────────────────────────┘ │ Esc     ClearFilt │
+│ Sort: CPU ▼                            │                   │
+└────────────────────────────────────────┴───────────────────┘
+```
+
+**Controller Tab - Service Management**
+```
+┌────────────────────────────────────────┬───────────────────┐
+│ ... [Controller] ...                   │ Keys              │
+├────────────────────────────────────────┼───────────────────┤
+│ → Start, stop, and manage Windows      │ Navigation        │
+│   services                             │ j/k     Move      │
+│                                        │ ...               │
+│ ┌────────────────────────────────────┐ │                   │
+│ │ Services (Controller) [Status▲]    │ │ Actions           │
+│ │                                    │ │ /       Search    │
+│ │ Windows Update        Running ...  │ │ s/S     Sort      │
+│ │ Print Spooler         Running ...  │ │ Enter   Toggle    │
+│ │ Bluetooth Service     Stopped ...  │ │ r       Refresh   │
+│ │ ...                                │ │ Esc     ClearFilt │
+│ └────────────────────────────────────┘ │                   │
+│ Sort: Status ▲                         │                   │
+└────────────────────────────────────────┴───────────────────┘
+```
+
+**File Lock Search Modal**
+```
+┌────────────────────────────────────────┐
+│         Find Locking Processes         │
+├────────────────────────────────────────┤
+│ Path: C:\Users\Me\Documents\file.txt   │
+│                                        │
+│   Locking processes:                   │
+│                                        │
+│     PID:   5678  notepad.exe           │
+│   ▶ PID:   9012  chrome.exe            │
+│     PID:  12345  excel.exe             │
+│                                        │
+│ [/] Edit Path  [Enter] Search          │
+│ [j/k] Navigate  [K] Kill  [Esc] Close  │
+└────────────────────────────────────────┘
+```
+
+**Note:** Press `/` to enter input mode and type a file path. Enter a folder path to scan all files in that directory.
 
 ## Acknowledgements
 
