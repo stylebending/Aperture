@@ -150,6 +150,39 @@ Can't delete a file because it's "in use"? Aperture can find the culprit:
 3. Find the service you want to control
 4. Press `Enter` to toggle start/stop (requires admin)
 
+### View Process Tree
+
+See hierarchical process relationships (parent/child):
+
+1. Switch to **Locker** tab
+2. Press `t` to toggle **Tree View**
+3. Navigate the tree with `j`/`k`
+4. Press `Space` to expand/collapse nodes (> / v indicators)
+5. Search/filter still works in tree view - shows matching processes and their ancestor chain
+
+### View Process Details
+
+See detailed information about a process:
+
+1. Switch to **Locker** tab
+2. Navigate to a process with `j`/`k`
+3. Press `d` to open **Process Details** modal
+4. View loaded modules, parent PID, CPU, and memory usage
+5. Press `K` in the modal to kill the process (requires admin)
+6. Press `Esc` or `q` to close
+
+### Export Data
+
+Export all data to JSON or CSV format:
+
+1. Press `e` to open the **Export** modal
+2. Press `j` to export as JSON
+3. Press `c` to export as CSV
+4. Files are saved to your Documents folder with timestamps
+5. Press `Esc` or `q` to cancel
+
+**Export includes:** All processes, services, and network connections from all tabs
+
 ### Filter and Search
 
 - Press `/` to enter search mode
@@ -208,7 +241,11 @@ Each tab supports different sorting:
 | | `S` (Shift+s) | Toggle order | Global | Switch ascending/descending |
 | | `r` | Refresh | Global | Force refresh current tab |
 | | `f` | Find locks | Global | Open file lock search modal |
-| **Locker** | `K` | Kill process | Locker only | Kill selected process (admin) |
+| | `e` | Export | Global | Open export format modal |
+| **Locker** | `t` | Tree view | Locker only | Toggle hierarchical process tree view |
+| | `Space` | Expand/Collapse | Locker only | Expand/collapse tree node (tree mode only) |
+| | `d` | Details | Locker only | Show process details modal |
+| | `K` | Kill process | Locker only | Kill selected process (admin) |
 | **Controller** | `Enter` | Toggle service | Controller only | Start/stop selected service (admin) |
 | **File Lock Modal** | `/` | Edit path | Modal | Enter input mode to type path |
 | | `Enter` | Search | Modal | Execute search |
@@ -237,6 +274,23 @@ When file lock modal is open (`f`):
 **Directory Scanning:**
 - Enter a folder path to scan all files in that directory
 - Shows "Scanned X files - Found Y locks" with the count of files checked
+
+### Export Modal
+
+When export modal is open (`e`):
+- `j` - Export to JSON format
+- `c` - Export to CSV format
+- `Esc` or `q` - Close modal without exporting
+
+**Export Location:** Files are saved to your Documents folder with timestamps (e.g., `aperture_export_1234567890.json`)
+
+### Process Details Modal
+
+When process details modal is open (`d` in Locker tab):
+- View process information: PID, name, parent PID, CPU%, memory
+- View loaded modules (first 10, with count of additional modules)
+- `K` - Kill the process (requires admin)
+- `Esc` or `q` - Close modal
 
 ## Configuration
 
@@ -300,11 +354,14 @@ aperture/
 
 | Feature | API |
 |---------|-----|
-| Process Enumeration | `EnumProcesses`, `QueryFullProcessImageNameW` |
+| Process Enumeration | `EnumProcesses`, `QueryFullProcessImageNameW`, `CreateToolhelp32Snapshot`, `Process32FirstW` |
+| Process Tree/Parent PID | `CreateToolhelp32Snapshot`, `Process32FirstW/NextW` |
 | Process Metrics | `GetProcessTimes`, `GetProcessMemoryInfo` |
+| Process Details | `EnumProcessModules`, `GetModuleBaseNameW`, `GetModuleFileNameExW` |
 | Elevation Check | `OpenProcessToken`, `GetTokenInformation` |
 | Service Management | `OpenSCManagerW`, `EnumServicesStatusExW`, `ControlService` |
-| Network Connections | `GetExtendedTcpTable`, `GetExtendedUdpTable` |
+| Network Connections (IPv4) | `GetExtendedTcpTable`, `GetExtendedUdpTable` |
+| Network Connections (IPv6) | `GetExtendedTcpTable` (AF_INET6), `GetExtendedUdpTable` (AF_INET6) |
 | File Lock Detection | `RmRegisterResources`, `RmGetList` (Restart Manager) |
 
 ## Roadmap
@@ -313,26 +370,22 @@ aperture/
 - [x] Process management with CPU/memory metrics
 - [x] Handle search using Restart Manager API
 - [x] Service management (start/stop)
-- [x] Network connection monitoring
+- [x] Network connection monitoring (IPv4 + IPv6)
 - [x] Smart sorting and filtering
 - [x] Persistent sidebar with keybindings
 - [x] Real-time navigation debounce (50ms)
 - [x] Change detection and smart updates
 - [x] Cached metrics to prevent flashing
+- [x] **Process tree view** - Hierarchical parent/child relationships with expand/collapse
+- [x] **Process details view** - Show loaded modules, parent PID, and process info
+- [x] **Export to JSON/CSV** - Export all tab data with timestamps
+- [x] **IPv6 support** - Full IPv6 TCP/UDP connection monitoring
 
 ### In Progress / TODO
 - [ ] Real-time service status notifications via `NotifyServiceStatusChange`
   - Currently polls every 2s; would show instant service state changes
-- [ ] Process tree view (parent/child relationships)
-  - Show hierarchical process relationships
-- [ ] IPv6 support for network connections
-  - Currently only shows IPv4 connections
 - [ ] Configurable polling intervals
   - Allow users to change 2s refresh rate
-- [ ] Export data to JSON/CSV
-  - Save process/service/connection lists
-- [ ] Process details view
-  - Show additional process info (command line, environment, etc.)
 - [ ] Dark/light theme support
   - Currently uses terminal default colors
 
@@ -347,6 +400,8 @@ Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows'
 - **Filter** processes by name, path, or PID
 - **Kill processes** (requires admin - press `K`)
 - **Find file locks** - Identify which processes are locking specific files (press `f`)
+- **Process tree view** - Hierarchical parent/child relationships (press `t`)
+- **Process details** - View loaded modules and detailed info (press `d`)
 
 ### The Controller (Service Management)
 - List all Windows services with status, start type, and process ID
@@ -355,7 +410,7 @@ Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows'
 - **Filter** services by name or display name
 
 ### The Nexus (Network Monitor)
-- Real-time TCP/UDP connection listing
+- Real-time TCP/UDP connection listing (IPv4 and IPv6)
 - Map connections to process PIDs and names
 - View connection states (ESTABLISHED, LISTENING, etc.)
 - **Sort by**: Connection State, PID, Protocol, Process Name
@@ -368,6 +423,7 @@ Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows'
 - **50ms navigation debounce** - Smooth cursor movement without jitter
 - **Change detection** - Only updates when data actually changes
 - **Cached metrics** - CPU/memory values persist during temporary data unavailability
+- **Export data** - Save all tab data to JSON or CSV (press `e`)
 
 ## License
 

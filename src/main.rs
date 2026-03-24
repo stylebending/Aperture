@@ -1,4 +1,5 @@
 mod app;
+mod export;
 mod state;
 mod sys;
 mod ui;
@@ -17,6 +18,7 @@ use app::{App, AppEvent};
 
 const TICK_RATE_MS: u64 = 100;
 const DATA_POLL_INTERVAL_MS: u64 = 2000;
+const SERVICE_POLL_INTERVAL_MS: u64 = 500; // Faster polling for services
 const METRICS_INTERVAL_MS: u64 = 1000;
 
 #[tokio::main]
@@ -46,6 +48,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
             interval.tick().await;
             if poll_tx.send(AppEvent::PollData).await.is_err() {
+                break;
+            }
+        }
+    });
+
+    // Separate service polling for near real-time updates
+    let service_tx = tx.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_millis(SERVICE_POLL_INTERVAL_MS));
+        loop {
+            interval.tick().await;
+            // Only poll services if we're on the Controller tab to save resources
+            if service_tx.send(AppEvent::PollServices).await.is_err() {
                 break;
             }
         }
@@ -96,6 +111,14 @@ async fn run_app(
                     AppEvent::PollData => {
                         // Refresh all tabs so data is always current when switching
                         app.refresh_all_tabs();
+                    }
+                    AppEvent::PollServices => {
+                        // Fast polling for services - only update if on Controller tab
+                        if app.current_tab == app::Tab::Controller {
+                            if let Ok(services) = sys::service::enumerate_services() {
+                                app.state.controller.update_services(services);
+                            }
+                        }
                     }
                     AppEvent::MetricsTick => {
                         app.update_metrics();
@@ -212,6 +235,38 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
                     }
                 }
             }
+            app::Modal::ProcessDetails(details) => {
+                match code {
+                    KeyCode::Esc | KeyCode::Char('q') => {
+                        app.cancel_modal();
+                    }
+                    KeyCode::Char('K') => {
+                        if app.is_elevated {
+                            app.modal = Some(app::Modal::KillConfirmation {
+                                pid: details.pid,
+                                name: details.name.clone(),
+                            });
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            app::Modal::ExportFormat => {
+                match code {
+                    KeyCode::Esc | KeyCode::Char('q') => {
+                        app.cancel_modal();
+                    }
+                    KeyCode::Char('j') => {
+                        app.export_to_json();
+                        app.cancel_modal();
+                    }
+                    KeyCode::Char('c') => {
+                        app.export_to_csv();
+                        app.cancel_modal();
+                    }
+                    _ => {}
+                }
+            }
         }
         return Ok(false);
     }
@@ -263,6 +318,14 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
         KeyCode::Char('f') => {
             app.open_handle_search();
         }
+        KeyCode::Char('d') => {
+            if app.current_tab == app::Tab::Locker {
+                app.show_process_details();
+            }
+        }
+        KeyCode::Char('e') => {
+            app.open_export_modal();
+        }
         KeyCode::Char('K') => {
             if app.current_tab == app::Tab::Locker && app.is_elevated {
                 app.show_kill_confirmation();
@@ -279,6 +342,16 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
         KeyCode::Char('S') => {
             // Shift+S - toggle sort order
             app.toggle_sort_order();
+        }
+        KeyCode::Char('t') => {
+            if app.current_tab == app::Tab::Locker {
+                app.toggle_tree_mode();
+            }
+        }
+        KeyCode::Char(' ') => {
+            if app.current_tab == app::Tab::Locker && app.state.locker.tree_mode {
+                app.toggle_expand();
+            }
         }
         KeyCode::Char('g') => {
             if app.pending_gg {

@@ -6,7 +6,7 @@ use windows::Win32::System::Services::{
     SERVICE_STATUS, SERVICE_STATUS_CURRENT_STATE, SERVICE_WIN32,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[allow(dead_code)]
 pub struct ServiceInfo {
     pub service_name: String,

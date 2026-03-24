@@ -175,6 +175,18 @@ fn render_keybindings_sidebar(f: &mut Frame, app: &App, area: Rect) {
     match app.current_tab {
         Tab::Locker => {
             lines.push(Line::from(vec![
+                Span::styled("t", key_style),
+                Span::styled("     TreeView", action_style),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("SPC", key_style),
+                Span::styled("   Expand", action_style),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("d", key_style),
+                Span::styled("     Details", action_style),
+            ]));
+            lines.push(Line::from(vec![
                 Span::styled("K", key_style),
                 Span::styled("     Kill", action_style),
             ]));
@@ -199,6 +211,10 @@ fn render_keybindings_sidebar(f: &mut Frame, app: &App, area: Rect) {
         Line::from(vec![
             Span::styled("Esc", key_style),
             Span::styled("   ClearFilt", action_style),
+        ]),
+        Line::from(vec![
+            Span::styled("e", key_style),
+            Span::styled("     Export", action_style),
         ]),
         Line::from(""),
         Line::from(Span::styled("System", header_style)),
@@ -337,6 +353,12 @@ fn render_modal(f: &mut Frame, app: &mut App) {
                 *is_directory,
                 *files_scanned,
             );
+        }
+        Some(Modal::ProcessDetails(details)) => {
+            render_process_details_modal(f, details, app.is_elevated);
+        }
+        Some(Modal::ExportFormat) => {
+            render_export_format_modal(f);
         }
         _ => {}
     }
@@ -512,6 +534,164 @@ fn render_handle_search_modal(
             .title(" Handle Search ")
             .title_style(Style::default().fg(Color::Cyan)),
     );
+
+    f.render_widget(Clear, area);
+    f.render_widget(paragraph, area);
+}
+
+fn render_process_details_modal(
+    f: &mut Frame,
+    details: &crate::app::ProcessDetails,
+    is_elevated: bool,
+) {
+    let area = centered_rect(80, 25, f.area());
+
+    let mut lines = vec![
+        Line::from(Span::styled(
+            "Process Details",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+    ];
+
+    // Basic info
+    lines.push(Line::from(vec![
+        Span::styled("Name:     ", Style::default().fg(Color::Yellow)),
+        Span::styled(&details.name, Style::default().fg(Color::White)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("PID:      ", Style::default().fg(Color::Yellow)),
+        Span::styled(details.pid.to_string(), Style::default().fg(Color::White)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("Parent:   ", Style::default().fg(Color::Yellow)),
+        Span::styled(
+            details.parent_pid.to_string(),
+            Style::default().fg(Color::White),
+        ),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("CPU:      ", Style::default().fg(Color::Yellow)),
+        Span::styled(
+            format!("{:.1}%", details.cpu_usage),
+            Style::default().fg(Color::White),
+        ),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("Memory:   ", Style::default().fg(Color::Yellow)),
+        Span::styled(
+            format!("{:.1} MB", details.memory_mb),
+            Style::default().fg(Color::White),
+        ),
+    ]));
+
+    if let Some(path) = &details.path {
+        lines.push(Line::from(vec![
+            Span::styled("Path:     ", Style::default().fg(Color::Yellow)),
+            Span::styled(path, Style::default().fg(Color::White)),
+        ]));
+    }
+
+    lines.push(Line::from(""));
+
+    // Show modules section
+    if !details.modules.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "Loaded Modules (first 10):",
+            Style::default().fg(Color::Yellow),
+        )));
+        for module in details.modules.iter().take(10) {
+            lines.push(Line::from(vec![
+                Span::raw("  "),
+                Span::styled(module, Style::default().fg(Color::White)),
+            ]));
+        }
+        if details.modules.len() > 10 {
+            lines.push(Line::from(vec![Span::styled(
+                format!("  ... and {} more", details.modules.len() - 10),
+                Style::default().fg(Color::DarkGray),
+            )]));
+        }
+    } else if details.error.is_some() {
+        lines.push(Line::from(Span::styled(
+            "Modules: (access denied)",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    lines.push(Line::from(""));
+
+    // Error message if any
+    if let Some(err) = &details.error {
+        lines.push(Line::from(vec![
+            Span::styled("Error: ", Style::default().fg(Color::Red)),
+            Span::styled(err, Style::default().fg(Color::Red)),
+        ]));
+        lines.push(Line::from(""));
+    }
+
+    // Help text
+    lines.push(Line::from(vec![
+        Span::styled(
+            "[K] Kill  ",
+            if is_elevated {
+                Style::default().fg(Color::Red)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            },
+        ),
+        Span::styled("[Esc] Close", Style::default().fg(Color::Gray)),
+    ]));
+
+    let paragraph = Paragraph::new(lines).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(format!(" {} (PID: {}) ", details.name, details.pid))
+            .title_style(Style::default().fg(Color::Cyan)),
+    );
+
+    f.render_widget(Clear, area);
+    f.render_widget(paragraph, area);
+}
+
+fn render_export_format_modal(f: &mut Frame) {
+    let area = centered_rect(50, 12, f.area());
+
+    let lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "Export Data",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("[j]", Style::default().fg(Color::Green)),
+            Span::styled(" Export to JSON", Style::default().fg(Color::White)),
+        ]),
+        Line::from(vec![
+            Span::styled("[c]", Style::default().fg(Color::Green)),
+            Span::styled(" Export to CSV", Style::default().fg(Color::White)),
+        ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("[Esc]", Style::default().fg(Color::Gray)),
+            Span::styled(" Cancel", Style::default().fg(Color::White)),
+        ]),
+        Line::from(""),
+    ];
+
+    let paragraph = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Export ")
+                .title_style(Style::default().fg(Color::Cyan)),
+        )
+        .alignment(Alignment::Center);
 
     f.render_widget(Clear, area);
     f.render_widget(paragraph, area);

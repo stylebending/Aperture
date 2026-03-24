@@ -1,16 +1,16 @@
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 use windows::core::PWSTR;
 use windows::Win32::Foundation::CloseHandle;
 use windows::Win32::NetworkManagement::IpHelper::{
-    GetExtendedTcpTable, GetExtendedUdpTable, MIB_TCPTABLE_OWNER_PID, MIB_UDPTABLE_OWNER_PID,
-    TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
+    GetExtendedTcpTable, GetExtendedUdpTable, MIB_TCP6TABLE_OWNER_PID, MIB_TCPTABLE_OWNER_PID,
+    MIB_UDP6TABLE_OWNER_PID, MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
 };
 use windows::Win32::Networking::WinSock::{ntohl, ntohs};
 use windows::Win32::System::Threading::{
     OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ConnectionInfo {
     pub protocol: String,
     pub local_addr: String,
@@ -43,6 +43,10 @@ fn tcp_state_to_string(state: u32) -> String {
 fn ip_to_string(ip: u32) -> String {
     let bytes = ip.to_be_bytes();
     Ipv4Addr::from(bytes).to_string()
+}
+
+fn ipv6_to_string(ip: &[u8; 16]) -> String {
+    Ipv6Addr::from(*ip).to_string()
 }
 
 fn get_process_name(pid: u32) -> Option<String> {
@@ -154,8 +158,90 @@ pub fn enumerate_connections() -> Result<Vec<ConnectionInfo>, Box<dyn std::error
                 });
             }
         }
-    }
 
-    connections.sort_by(|a, b| a.pid.cmp(&b.pid));
-    Ok(connections)
+        // IPv6 TCP connections
+        let mut size = 0u32;
+        let _ = GetExtendedTcpTable(None, &mut size, false, 23, TCP_TABLE_OWNER_PID_ALL, 0);
+
+        let mut buffer = vec![0u8; size as usize];
+
+        let result = GetExtendedTcpTable(
+            Some(buffer.as_mut_ptr() as *mut _),
+            &mut size,
+            false,
+            23,
+            TCP_TABLE_OWNER_PID_ALL,
+            0,
+        );
+
+        if result == 0 {
+            let table = buffer.as_ptr() as *const MIB_TCP6TABLE_OWNER_PID;
+            let num_entries = (*table).dwNumEntries;
+            let rows = (*table).table.as_ptr();
+
+            for i in 0..num_entries {
+                let row = &*rows.add(i as usize);
+
+                let local_addr = ipv6_to_string(&row.ucLocalAddr);
+                let local_port = ntohs(row.dwLocalPort as u16);
+                let remote_addr = ipv6_to_string(&row.ucRemoteAddr);
+                let remote_port = ntohs(row.dwRemotePort as u16);
+                let pid = row.dwOwningPid;
+
+                connections.push(ConnectionInfo {
+                    protocol: "TCP6".to_string(),
+                    local_addr,
+                    local_port,
+                    remote_addr,
+                    remote_port,
+                    state: tcp_state_to_string(row.dwState),
+                    pid,
+                    process_name: get_process_name(pid),
+                });
+            }
+        }
+
+        // IPv6 UDP connections
+        let mut size = 0u32;
+        let _ = GetExtendedUdpTable(None, &mut size, false, 23, UDP_TABLE_OWNER_PID, 0);
+
+        let mut buffer = vec![0u8; size as usize];
+
+        let result = GetExtendedUdpTable(
+            Some(buffer.as_mut_ptr() as *mut _),
+            &mut size,
+            false,
+            23,
+            UDP_TABLE_OWNER_PID,
+            0,
+        );
+
+        if result == 0 {
+            let table = buffer.as_ptr() as *const MIB_UDP6TABLE_OWNER_PID;
+            let num_entries = (*table).dwNumEntries;
+            let rows = (*table).table.as_ptr();
+
+            for i in 0..num_entries {
+                let row = &*rows.add(i as usize);
+
+                let local_addr = ipv6_to_string(&row.ucLocalAddr);
+                let local_port = ntohs(row.dwLocalPort as u16);
+                let pid = row.dwOwningPid;
+
+                connections.push(ConnectionInfo {
+                    protocol: "UDP6".to_string(),
+                    local_addr,
+                    local_port,
+                    remote_addr: "::".to_string(),
+                    remote_port: 0,
+                    state: "N/A".to_string(),
+                    pid,
+                    process_name: get_process_name(pid),
+                });
+            }
+        }
+
+        connections.sort_by(|a, b| a.pid.cmp(&b.pid));
+        Ok(connections)
+    }
 }

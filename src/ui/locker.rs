@@ -9,56 +9,128 @@ use ratatui::{
 use crate::state::locker::LockerState;
 
 pub fn render(f: &mut Frame, state: &mut LockerState, search_query: &str, area: Rect) {
-    let filtered = state.filtered_processes(search_query);
+    // Rebuild tree if in tree mode to apply any filter changes
+    if state.tree_mode {
+        state.build_tree(search_query);
+    }
 
-    let items: Vec<ListItem> = filtered
-        .iter()
-        .map(|(_, p)| {
-            // Use cached values if current is 0, for stable display
-            let cpu_val = if p.cpu_usage > 0.0 {
-                p.cpu_usage
-            } else {
-                p.last_cpu_usage
-            };
-            let mem_val = if p.memory_mb > 0.0 {
-                p.memory_mb
-            } else {
-                p.last_memory_mb
-            };
-
-            let cpu_str = if cpu_val > 0.0 {
-                format!("{:5.1}%", cpu_val)
-            } else {
-                "     -".to_string()
-            };
-            let mem_str = if mem_val > 0.0 {
-                format!("{:5.1}MB", mem_val)
-            } else {
-                "     -".to_string()
-            };
-            ListItem::new(format!(
-                "{:6} {:20} {} {} {}",
-                p.pid,
-                if p.name.len() > 20 {
-                    &p.name[..20]
+    // Determine what to render based on tree mode
+    let items: Vec<ListItem> = if state.tree_mode {
+        // In tree mode, render from tree_nodes
+        state
+            .tree_nodes
+            .iter()
+            .map(|node| {
+                let p = &node.process;
+                // Use cached values if current is 0, for stable display
+                let cpu_val = if p.cpu_usage > 0.0 {
+                    p.cpu_usage
                 } else {
-                    &p.name
-                },
-                cpu_str,
-                mem_str,
-                p.path.as_deref().unwrap_or("-")
-            ))
-            .style(Style::default().fg(Color::White))
-        })
-        .collect();
+                    p.last_cpu_usage
+                };
+                let mem_val = if p.memory_mb > 0.0 {
+                    p.memory_mb
+                } else {
+                    p.last_memory_mb
+                };
 
-    // Build title with filter and sort info
+                let cpu_str = if cpu_val > 0.0 {
+                    format!("{:5.1}%", cpu_val)
+                } else {
+                    "     -".to_string()
+                };
+                let mem_str = if mem_val > 0.0 {
+                    format!("{:5.1}MB", mem_val)
+                } else {
+                    "     -".to_string()
+                };
+
+                // Build tree prefix
+                let indent = "  ".repeat(node.depth);
+                let expand_icon = if node.has_children {
+                    if node.is_expanded {
+                        "v "
+                    } else {
+                        "> "
+                    }
+                } else {
+                    "  "
+                };
+                let prefix = format!("{}{}", indent, expand_icon);
+
+                ListItem::new(format!(
+                    "{}{:6} {:20} {} {} {}",
+                    prefix,
+                    p.pid,
+                    if p.name.len() > 20 {
+                        &p.name[..20]
+                    } else {
+                        &p.name
+                    },
+                    cpu_str,
+                    mem_str,
+                    p.path.as_deref().unwrap_or("-")
+                ))
+                .style(Style::default().fg(Color::White))
+            })
+            .collect()
+    } else {
+        // In flat mode, use filtered processes
+        let filtered = state.filtered_processes(search_query);
+        filtered
+            .iter()
+            .map(|(_, p)| {
+                // Use cached values if current is 0, for stable display
+                let cpu_val = if p.cpu_usage > 0.0 {
+                    p.cpu_usage
+                } else {
+                    p.last_cpu_usage
+                };
+                let mem_val = if p.memory_mb > 0.0 {
+                    p.memory_mb
+                } else {
+                    p.last_memory_mb
+                };
+
+                let cpu_str = if cpu_val > 0.0 {
+                    format!("{:5.1}%", cpu_val)
+                } else {
+                    "     -".to_string()
+                };
+                let mem_str = if mem_val > 0.0 {
+                    format!("{:5.1}MB", mem_val)
+                } else {
+                    "     -".to_string()
+                };
+                ListItem::new(format!(
+                    "{:6} {:20} {} {} {}",
+                    p.pid,
+                    if p.name.len() > 20 {
+                        &p.name[..20]
+                    } else {
+                        &p.name
+                    },
+                    cpu_str,
+                    mem_str,
+                    p.path.as_deref().unwrap_or("-")
+                ))
+                .style(Style::default().fg(Color::White))
+            })
+            .collect()
+    };
+
+    // Build title with filter, sort info, and tree mode indicator
     let total = state.processes.len();
-    let showing = filtered.len();
+    let showing = if state.tree_mode {
+        state.tree_nodes.len()
+    } else {
+        state.filtered_processes(search_query).len()
+    };
     let sort_info = format!("{} {}", state.sort_key.as_str(), state.sort_order.as_str());
+    let mode_indicator = if state.tree_mode { " [TREE]" } else { "" };
     let title = format!(
-        " Processes (Locker) [{}/{} | {}] ",
-        showing, total, sort_info
+        " Processes (Locker){} [{}/{} | {}] ",
+        mode_indicator, showing, total, sort_info
     );
 
     // Create inner area inside the border for the header

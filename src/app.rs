@@ -8,6 +8,7 @@ pub use crate::sys::handle::LockingProcess;
 pub enum AppEvent {
     Tick,
     PollData,
+    PollServices,
     MetricsTick,
     ServiceUpdate(Vec<sys::service::ServiceInfo>),
     ProcessUpdate(Vec<sys::process::ProcessInfo>),
@@ -42,6 +43,20 @@ impl std::fmt::Display for Tab {
 }
 
 #[derive(Debug, Clone)]
+pub struct ProcessDetails {
+    pub pid: u32,
+    pub name: String,
+    pub path: Option<String>,
+    pub command_line: Option<String>,
+    pub environment: Vec<(String, String)>,
+    pub modules: Vec<String>,
+    pub parent_pid: u32,
+    pub cpu_usage: f32,
+    pub memory_mb: f64,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone)]
 pub enum Modal {
     KillConfirmation {
         pid: u32,
@@ -56,6 +71,8 @@ pub enum Modal {
         is_directory: bool,
         files_scanned: Option<usize>,
     },
+    ProcessDetails(ProcessDetails),
+    ExportFormat,
 }
 
 pub struct AppState {
@@ -466,5 +483,89 @@ impl App {
             Tab::Controller => self.state.controller.toggle_sort_order(),
             Tab::Nexus => self.state.nexus.toggle_sort_order(),
         }
+    }
+
+    pub fn toggle_tree_mode(&mut self) {
+        if self.current_tab == Tab::Locker {
+            self.state.locker.toggle_tree_mode();
+        }
+    }
+
+    pub fn toggle_expand(&mut self) {
+        if self.current_tab == Tab::Locker {
+            self.state.locker.toggle_expand();
+        }
+    }
+
+    pub fn show_process_details(&mut self) {
+        if self.current_tab == Tab::Locker {
+            if let Some(process) = self.state.locker.get_selected_process(&self.search_query) {
+                let pid = process.pid;
+                let name = process.name.clone();
+                let path = process.path.clone();
+                let parent_pid = process.parent_pid;
+                let cpu_usage = if process.cpu_usage > 0.0 {
+                    process.cpu_usage
+                } else {
+                    process.last_cpu_usage
+                };
+                let memory_mb = if process.memory_mb > 0.0 {
+                    process.memory_mb
+                } else {
+                    process.last_memory_mb
+                };
+                
+                // Get detailed info
+                let (command_line, environment, modules, error) = 
+                    sys::process::get_process_details(pid);
+                
+                self.modal = Some(Modal::ProcessDetails(ProcessDetails {
+                    pid,
+                    name,
+                    path,
+                    command_line,
+                    environment,
+                    modules,
+                    parent_pid,
+                    cpu_usage,
+                    memory_mb,
+                    error,
+                }));
+            }
+        }
+    }
+
+    pub fn export_to_json(&mut self) {
+        match crate::export::export_to_json(
+            &self.state.locker,
+            &self.state.controller,
+            &self.state.nexus,
+        ) {
+            Ok(path) => {
+                self.status_message = Some(format!("Exported to {}", path));
+            }
+            Err(e) => {
+                self.status_message = Some(format!("Export failed: {}", e));
+            }
+        }
+    }
+
+    pub fn export_to_csv(&mut self) {
+        match crate::export::export_to_csv(
+            &self.state.locker,
+            &self.state.controller,
+            &self.state.nexus,
+        ) {
+            Ok(path) => {
+                self.status_message = Some(format!("Exported to {}", path));
+            }
+            Err(e) => {
+                self.status_message = Some(format!("Export failed: {}", e));
+            }
+        }
+    }
+
+    pub fn open_export_modal(&mut self) {
+        self.modal = Some(Modal::ExportFormat);
     }
 }
