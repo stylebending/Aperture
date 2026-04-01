@@ -386,8 +386,6 @@ aperture/
   - Currently polls every 2s; would show instant service state changes
 - [ ] Configurable polling intervals
   - Allow users to change 2s refresh rate
-- [ ] Dark/light theme support
-  - Currently uses terminal default colors
 
 Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows' deep diagnostic capabilities (Processes, Services, and Network). Unlike cross-platform tools, Aperture focuses on Windows-specific pain points: file locks, service management, and process-to-socket mapping.
 
