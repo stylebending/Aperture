@@ -12,10 +12,13 @@ use windows::Win32::System::ProcessStatus::{
     EnumProcessModules, EnumProcesses, GetModuleBaseNameW, GetModuleFileNameExW,
     GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS,
 };
-use windows::Win32::System::SystemInformation::{GetSystemInfo, SYSTEM_INFO};
+use windows::Win32::System::SystemInformation::{
+    GetSystemInfo, GlobalMemoryStatusEx, MEMORYSTATUSEX, SYSTEM_INFO,
+};
 use windows::Win32::System::Threading::{
-    GetCurrentProcess, GetProcessTimes, OpenProcess, OpenProcessToken, QueryFullProcessImageNameW,
-    PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
+    GetCurrentProcess, GetProcessTimes, GetSystemTimes, OpenProcess, OpenProcessToken,
+    QueryFullProcessImageNameW, PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION,
+    PROCESS_TERMINATE,
 };
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -34,12 +37,73 @@ pub struct ProcessInfo {
 static PREV_CPU_TIMES: OnceLock<Mutex<HashMap<u32, (u64, Instant)>>> = OnceLock::new();
 static NUM_CPUS: OnceLock<u32> = OnceLock::new();
 
-fn get_num_cpus() -> u32 {
+pub fn get_num_cpus() -> u32 {
     *NUM_CPUS.get_or_init(|| unsafe {
         let mut sys_info: SYSTEM_INFO = SYSTEM_INFO::default();
         GetSystemInfo(&mut sys_info);
         sys_info.dwNumberOfProcessors
     })
+}
+
+pub fn get_system_memory_info() -> (f64, f64) {
+    unsafe {
+        let mut mem_status = MEMORYSTATUSEX::default();
+        mem_status.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
+        if GlobalMemoryStatusEx(&mut mem_status).is_ok() {
+            let total_mb = mem_status.ullTotalPhys as f64 / (1024.0 * 1024.0);
+            let avail_mb = mem_status.ullAvailPhys as f64 / (1024.0 * 1024.0);
+            (total_mb, avail_mb)
+        } else {
+            (0.0, 0.0)
+        }
+    }
+}
+
+static PREV_SYSTEM_TIMES: OnceLock<Mutex<Option<(u64, u64, u64, Instant)>>> = OnceLock::new();
+
+pub fn get_total_cpu_usage() -> f32 {
+    unsafe {
+        let mut idle_time = FILETIME::default();
+        let mut kernel_time = FILETIME::default();
+        let mut user_time = FILETIME::default();
+
+        if GetSystemTimes(
+            Some(&mut idle_time),
+            Some(&mut kernel_time),
+            Some(&mut user_time),
+        )
+        .is_err()
+        {
+            return 0.0;
+        }
+
+        let now = Instant::now();
+        let idle = filetime_to_u64(idle_time);
+        let kernel = filetime_to_u64(kernel_time);
+        let user = filetime_to_u64(user_time);
+        let total = kernel + user;
+
+        let mut guard = PREV_SYSTEM_TIMES
+            .get_or_init(|| Mutex::new(None))
+            .lock()
+            .unwrap();
+
+        if let Some((prev_idle, prev_kernel, prev_user, prev_instant)) = *guard {
+            let elapsed = now.duration_since(prev_instant).as_millis() as u64;
+            if elapsed > 0 {
+                let idle_delta = idle.saturating_sub(prev_idle);
+                let total_delta = (total).saturating_sub(prev_kernel + prev_user);
+                if total_delta > 0 {
+                    let pct = (1.0 - (idle_delta as f64 / total_delta as f64)) * 100.0;
+                    *guard = Some((idle, kernel, user, now));
+                    return pct as f32;
+                }
+            }
+        }
+
+        *guard = Some((idle, kernel, user, now));
+        0.0
+    }
 }
 
 pub fn is_elevated() -> bool {

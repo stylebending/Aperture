@@ -101,6 +101,9 @@ pub struct App {
     pub modal: Option<Modal>,
     pub handle_search_input_mode: bool,
     pub pending_gg: bool,
+    pub total_cpu: f32,
+    pub total_memory_mb: f64,
+    pub total_system_memory_mb: f64,
 }
 
 impl App {
@@ -115,6 +118,9 @@ impl App {
             modal: None,
             handle_search_input_mode: false,
             pending_gg: false,
+            total_cpu: 0.0,
+            total_memory_mb: 0.0,
+            total_system_memory_mb: 0.0,
         }
     }
 
@@ -467,6 +473,14 @@ impl App {
         ) {
             self.state.locker.sort_processes();
         }
+
+        // Query system CPU usage via GetSystemTimes (matches Task Manager)
+        self.total_cpu = sys::process::get_total_cpu_usage();
+
+        // Query system memory info for accurate total usage (matches Task Manager)
+        let (total_mb, avail_mb) = sys::process::get_system_memory_info();
+        self.total_system_memory_mb = total_mb;
+        self.total_memory_mb = total_mb - avail_mb;
     }
 
     pub fn cycle_sort_key(&mut self) {

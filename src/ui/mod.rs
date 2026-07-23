@@ -266,9 +266,14 @@ fn render_tab_content(f: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn render_status_bar(f: &mut Frame, app: &mut App, area: Rect) {
-    let mut spans = vec![];
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Min(0), Constraint::Max(42)])
+        .split(area);
 
-    // Show sort indicator
+    // Left-aligned: sort, filter, messages, elevation
+    let mut left_spans = vec![];
+
     let sort_info = match app.current_tab {
         Tab::Locker => format!(
             "Sort: {} {}",
@@ -286,32 +291,73 @@ fn render_status_bar(f: &mut Frame, app: &mut App, area: Rect) {
             app.state.nexus.sort_order.as_str()
         ),
     };
-    spans.push(Span::styled(sort_info, Style::default().fg(Color::Cyan)));
+    left_spans.push(Span::styled(sort_info, Style::default().fg(Color::Cyan)));
 
-    // Show filter status if active
     if app.has_active_filter() {
-        spans.push(Span::styled(
+        left_spans.push(Span::styled(
             "  [FILTER ACTIVE]",
             Style::default().fg(Color::Yellow),
         ));
     }
 
-    // Show status message if present
     if let Some(msg) = &app.status_message {
-        spans.push(Span::styled("  ", Style::default()));
-        spans.push(Span::styled(msg, Style::default().fg(Color::Yellow)));
+        left_spans.push(Span::styled("  ", Style::default()));
+        left_spans.push(Span::styled(msg, Style::default().fg(Color::Yellow)));
     }
 
-    // Show elevation warning
     if !app.is_elevated {
-        spans.push(Span::styled(
+        left_spans.push(Span::styled(
             "  [!] No admin",
             Style::default().fg(Color::Red),
         ));
     }
 
-    let status = Paragraph::new(Line::from(spans));
-    f.render_widget(status, area);
+    f.render_widget(
+        Paragraph::new(Line::from(left_spans)),
+        chunks[0],
+    );
+
+    // Right-aligned: total system metrics
+    let cpu_style = if app.total_cpu > 90.0 {
+        Style::default().fg(Color::Red)
+    } else if app.total_cpu > 70.0 {
+        Style::default().fg(Color::Yellow)
+    } else {
+        Style::default().fg(Color::Green)
+    };
+
+    let used_gb = app.total_memory_mb / 1024.0;
+    let total_gb = app.total_system_memory_mb / 1024.0;
+    let mem_pct = if app.total_system_memory_mb > 0.0 {
+        (app.total_memory_mb / app.total_system_memory_mb) * 100.0
+    } else {
+        0.0
+    };
+    let mem_style = if mem_pct > 90.0 {
+        Style::default().fg(Color::Red)
+    } else if mem_pct > 70.0 {
+        Style::default().fg(Color::Yellow)
+    } else {
+        Style::default().fg(Color::Green)
+    };
+
+    let right_spans = vec![
+        Span::styled("CPU", cpu_style),
+        Span::styled(
+            format!(":{:>6.1}%  ", app.total_cpu),
+            Style::default().fg(Color::White),
+        ),
+        Span::styled("Mem", mem_style),
+        Span::styled(
+            format!(":{:>5.1}/{:>5.1}GB", used_gb, total_gb),
+            Style::default().fg(Color::White),
+        ),
+    ];
+
+    f.render_widget(
+        Paragraph::new(Line::from(right_spans)),
+        chunks[1],
+    );
 }
 
 fn render_search_box(f: &mut Frame, app: &mut App, area: Rect) {

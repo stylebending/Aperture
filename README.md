@@ -67,7 +67,7 @@ aperture
 │ │ 7890  explorer.exe  2.1%    78.3MB │ │ K       Kill      │
 │ │ ...                                │ │ r       Refresh   │
 │ └────────────────────────────────────┘ │ Esc     ClearFilt │
-│ Sort: CPU ▼                            │                   │
+│ Sort: CPU ▼              CPU: 45.2%  Mem:  4.2/ 31.9GB │   │
 └────────────────────────────────────────┴───────────────────┘
 ```
 
@@ -87,7 +87,7 @@ aperture
 │ │ Bluetooth Service     Stopped ...  │ │ r       Refresh   │
 │ │ ...                                │ │ Esc     ClearFilt │
 │ └────────────────────────────────────┘ │                   │
-│ Sort: Status ▲                         │                   │
+│ Sort: Status ▲          CPU: 45.2%  Mem:  4.2/ 31.9GB │   │
 └────────────────────────────────────────┴───────────────────┘
 ```
 
@@ -417,6 +417,7 @@ Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows'
 ### UI Features
 - **Vim Motions** keybindings for easy navigation
 - **Permanent sidebar** with context-aware keybindings
+- **System metrics** in the status bar - Total CPU and memory usage visible from any tab
 - **Smart data caching** - All tabs preload for instant switching
 - **50ms navigation debounce** - Smooth cursor movement without jitter
 - **Change detection** - Only updates when data actually changes
