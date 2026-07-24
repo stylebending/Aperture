@@ -236,11 +236,47 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
                 }
             }
             app::Modal::ProcessDetails(details) => {
+                // Handle Ctrl+page keys inside modal
+                if modifiers.contains(KeyModifiers::CONTROL) {
+                    match code {
+                        KeyCode::Char('d') => {
+                            app.select_next_page_modules();
+                            return Ok(false);
+                        }
+                        KeyCode::Char('u') => {
+                            app.select_prev_page_modules();
+                            return Ok(false);
+                        }
+                        _ => {}
+                    }
+                }
+
                 match code {
                     KeyCode::Esc | KeyCode::Char('q') => {
                         app.cancel_modal();
                     }
+                    KeyCode::Down | KeyCode::Char('j') => {
+                        app.pending_gg = false;
+                        app.select_next_module();
+                    }
+                    KeyCode::Up | KeyCode::Char('k') => {
+                        app.pending_gg = false;
+                        app.select_prev_module();
+                    }
+                    KeyCode::Char('g') => {
+                        if app.pending_gg {
+                            app.select_first_module();
+                            app.pending_gg = false;
+                        } else {
+                            app.pending_gg = true;
+                        }
+                    }
+                    KeyCode::Char('G') => {
+                        app.pending_gg = false;
+                        app.select_last_module();
+                    }
                     KeyCode::Char('K') => {
+                        app.pending_gg = false;
                         if app.is_elevated {
                             app.modal = Some(app::Modal::KillConfirmation {
                                 pid: details.pid,
@@ -248,7 +284,9 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
                             });
                         }
                     }
-                    _ => {}
+                    _ => {
+                        app.pending_gg = false;
+                    }
                 }
             }
             app::Modal::ExportFormat => {

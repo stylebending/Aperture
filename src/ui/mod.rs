@@ -602,16 +602,18 @@ fn render_process_details_modal(
     is_elevated: bool,
 ) {
     let area = centered_rect(80, 25, f.area());
+    let height = 25usize;
 
-    let mut lines = vec![
-        Line::from(Span::styled(
-            "Process Details",
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        )),
-        Line::from(""),
-    ];
+    let mut lines: Vec<Line> = Vec::new();
+
+    // Title
+    lines.push(Line::from(Span::styled(
+        "Process Details",
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
 
     // Basic info
     lines.push(Line::from(vec![
@@ -653,44 +655,90 @@ fn render_process_details_modal(
 
     lines.push(Line::from(""));
 
-    // Show modules section
+    // Fixed lines before module section
+    let fixed_line_count = lines.len();
+
+    // Reserved lines at the bottom: blank + error (if present) + help
+    let has_error = details.error.is_some();
+    let bottom_reserved = if has_error { 4 } else { 2 }; // blank, error, blank, help vs blank, help
+    let max_module_lines = height.saturating_sub(fixed_line_count + bottom_reserved);
+
     if !details.modules.is_empty() {
         lines.push(Line::from(Span::styled(
-            "Loaded Modules (first 10):",
+            "Loaded Modules:",
             Style::default().fg(Color::Yellow),
         )));
-        for module in details.modules.iter().take(10) {
-            lines.push(Line::from(vec![
-                Span::raw("  "),
-                Span::styled(module, Style::default().fg(Color::White)),
-            ]));
+
+        let total = details.modules.len();
+        let selected = details.module_selected;
+        let available = max_module_lines.saturating_sub(1); // -1 for the header
+
+        // Calculate scroll offset to keep selected visible
+        let scroll = if available == 0 || total <= available {
+            0
+        } else if selected < available / 2 {
+            0
+        } else if selected + available / 2 >= total {
+            total.saturating_sub(available)
+        } else {
+            selected.saturating_sub(available / 2)
+        };
+
+        for (i, module) in details
+            .modules
+            .iter()
+            .enumerate()
+            .skip(scroll)
+            .take(available)
+        {
+            let is_selected = i == selected;
+            let prefix = if is_selected { "▸ " } else { "  " };
+            let style = if is_selected {
+                Style::default()
+                    .bg(Color::DarkGray)
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+            lines.push(Line::from(Span::styled(
+                format!("{}{}", prefix, module),
+                style,
+            )));
         }
-        if details.modules.len() > 10 {
-            lines.push(Line::from(vec![Span::styled(
-                format!("  ... and {} more", details.modules.len() - 10),
+
+        // Show "more" indicator if there are items below the visible window
+        if scroll + available < total {
+            lines.push(Line::from(Span::styled(
+                format!("  ↓ {} more", total - (scroll + available)),
                 Style::default().fg(Color::DarkGray),
-            )]));
+            )));
         }
-    } else if details.error.is_some() {
+    } else if has_error {
         lines.push(Line::from(Span::styled(
             "Modules: (access denied)",
             Style::default().fg(Color::DarkGray),
         )));
     }
 
-    lines.push(Line::from(""));
-
-    // Error message if any
-    if let Some(err) = &details.error {
-        lines.push(Line::from(vec![
-            Span::styled("Error: ", Style::default().fg(Color::Red)),
-            Span::styled(err, Style::default().fg(Color::Red)),
-        ]));
+    // Error section
+    if has_error {
         lines.push(Line::from(""));
+        if let Some(err) = &details.error {
+            lines.push(Line::from(vec![
+                Span::styled("Error: ", Style::default().fg(Color::Red)),
+                Span::styled(err, Style::default().fg(Color::Red)),
+            ]));
+        }
     }
 
     // Help text
+    lines.push(Line::from(""));
     lines.push(Line::from(vec![
+        Span::styled(
+            "[j/k] Navigate  ",
+            Style::default().fg(Color::Cyan),
+        ),
         Span::styled(
             "[K] Kill  ",
             if is_elevated {

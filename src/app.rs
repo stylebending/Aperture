@@ -56,6 +56,7 @@ pub struct ProcessDetails {
     pub cpu_usage: f32,
     pub memory_mb: f64,
     pub error: Option<String>,
+    pub module_selected: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -572,7 +573,63 @@ impl App {
                     cpu_usage,
                     memory_mb,
                     error,
+                    module_selected: 0,
                 }));
+            }
+        }
+    }
+
+    pub fn select_next_module(&mut self) {
+        if let Some(Modal::ProcessDetails(details)) = &mut self.modal {
+            if !details.modules.is_empty() {
+                details.module_selected =
+                    (details.module_selected + 1) % details.modules.len();
+            }
+        }
+    }
+
+    pub fn select_prev_module(&mut self) {
+        if let Some(Modal::ProcessDetails(details)) = &mut self.modal {
+            if !details.modules.is_empty() {
+                details.module_selected = (details.module_selected
+                    + details.modules.len()
+                    - 1)
+                    % details.modules.len();
+            }
+        }
+    }
+
+    pub fn select_prev_page_modules(&mut self) {
+        if let Some(Modal::ProcessDetails(details)) = &mut self.modal {
+            if !details.modules.is_empty() {
+                details.module_selected =
+                    details.module_selected.saturating_sub(10);
+            }
+        }
+    }
+
+    pub fn select_next_page_modules(&mut self) {
+        if let Some(Modal::ProcessDetails(details)) = &mut self.modal {
+            if !details.modules.is_empty() {
+                let last = details.modules.len() - 1;
+                details.module_selected =
+                    std::cmp::min(details.module_selected + 10, last);
+            }
+        }
+    }
+
+    pub fn select_first_module(&mut self) {
+        if let Some(Modal::ProcessDetails(details)) = &mut self.modal {
+            if !details.modules.is_empty() {
+                details.module_selected = 0;
+            }
+        }
+    }
+
+    pub fn select_last_module(&mut self) {
+        if let Some(Modal::ProcessDetails(details)) = &mut self.modal {
+            if !details.modules.is_empty() {
+                details.module_selected = details.modules.len() - 1;
             }
         }
     }
