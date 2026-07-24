@@ -20,6 +20,7 @@ pub enum Tab {
     Locker,
     Controller,
     Nexus,
+    Env,
 }
 
 impl Tab {
@@ -28,11 +29,12 @@ impl Tab {
             Tab::Locker => "Locker",
             Tab::Controller => "Controller",
             Tab::Nexus => "Nexus",
+            Tab::Env => "Env",
         }
     }
 
     pub fn all() -> &'static [Tab] {
-        &[Tab::Locker, Tab::Controller, Tab::Nexus]
+        &[Tab::Locker, Tab::Controller, Tab::Nexus, Tab::Env]
     }
 }
 
@@ -79,6 +81,7 @@ pub struct AppState {
     pub locker: state::locker::LockerState,
     pub controller: state::controller::ControllerState,
     pub nexus: state::nexus::NexusState,
+    pub env: state::env::EnvState,
 }
 
 impl AppState {
@@ -87,6 +90,7 @@ impl AppState {
             locker: state::locker::LockerState::new(),
             controller: state::controller::ControllerState::new(),
             nexus: state::nexus::NexusState::new(),
+            env: state::env::EnvState::new(),
         }
     }
 }
@@ -149,6 +153,7 @@ impl App {
             Tab::Locker => self.state.locker.select_next(&self.search_query),
             Tab::Controller => self.state.controller.select_next(&self.search_query),
             Tab::Nexus => self.state.nexus.select_next(&self.search_query),
+            Tab::Env => self.state.env.select_next(),
         }
     }
 
@@ -157,6 +162,7 @@ impl App {
             Tab::Locker => self.state.locker.select_prev(&self.search_query),
             Tab::Controller => self.state.controller.select_prev(&self.search_query),
             Tab::Nexus => self.state.nexus.select_prev(&self.search_query),
+            Tab::Env => self.state.env.select_prev(),
         }
     }
 
@@ -165,6 +171,7 @@ impl App {
             Tab::Locker => self.state.locker.select_page_up(&self.search_query),
             Tab::Controller => self.state.controller.select_page_up(&self.search_query),
             Tab::Nexus => self.state.nexus.select_page_up(&self.search_query),
+            Tab::Env => self.state.env.select_page_up(),
         }
     }
 
@@ -173,6 +180,7 @@ impl App {
             Tab::Locker => self.state.locker.select_page_down(&self.search_query),
             Tab::Controller => self.state.controller.select_page_down(&self.search_query),
             Tab::Nexus => self.state.nexus.select_page_down(&self.search_query),
+            Tab::Env => self.state.env.select_page_down(),
         }
     }
 
@@ -181,6 +189,7 @@ impl App {
             Tab::Locker => self.state.locker.select_first(&self.search_query),
             Tab::Controller => self.state.controller.select_first(&self.search_query),
             Tab::Nexus => self.state.nexus.select_first(&self.search_query),
+            Tab::Env => self.state.env.select_first(),
         }
     }
 
@@ -189,6 +198,7 @@ impl App {
             Tab::Locker => self.state.locker.select_last(&self.search_query),
             Tab::Controller => self.state.controller.select_last(&self.search_query),
             Tab::Nexus => self.state.nexus.select_last(&self.search_query),
+            Tab::Env => self.state.env.select_last(),
         }
     }
 
@@ -213,6 +223,7 @@ impl App {
             Tab::Locker => self.state.locker.set_filter(query),
             Tab::Controller => self.state.controller.set_filter(query),
             Tab::Nexus => self.state.nexus.set_filter(query),
+            Tab::Env => self.state.env.set_filter(query),
         }
         self.search_mode = false;
         self.search_query.clear();
@@ -223,6 +234,7 @@ impl App {
             Tab::Locker => self.state.locker.clear_filter(),
             Tab::Controller => self.state.controller.clear_filter(),
             Tab::Nexus => self.state.nexus.clear_filter(),
+            Tab::Env => self.state.env.clear_filter(),
         }
     }
 
@@ -231,6 +243,7 @@ impl App {
             Tab::Locker => self.state.locker.active_filter.is_some(),
             Tab::Controller => self.state.controller.active_filter.is_some(),
             Tab::Nexus => self.state.nexus.active_filter.is_some(),
+            Tab::Env => self.state.env.active_filter.is_some(),
         }
     }
 
@@ -447,7 +460,19 @@ impl App {
                     self.state.nexus.update_connections(connections);
                 }
             }
+            Tab::Env => {
+                self.refresh_env();
+            }
         }
+    }
+
+    pub fn refresh_env(&mut self) {
+        let process_vars = sys::env::get_process_env_vars();
+        let user_vars = sys::env::get_user_env_vars();
+        let system_vars = sys::env::get_system_env_vars();
+        self.state
+            .env
+            .update_env_vars(process_vars, user_vars, system_vars);
     }
 
     pub fn refresh_all_tabs(&mut self) {
@@ -461,6 +486,7 @@ impl App {
         if let Ok(connections) = sys::network::enumerate_connections() {
             self.state.nexus.update_connections(connections);
         }
+        self.refresh_env();
     }
 
     pub fn update_metrics(&mut self) {
@@ -488,6 +514,7 @@ impl App {
             Tab::Locker => self.state.locker.cycle_sort_key(),
             Tab::Controller => self.state.controller.cycle_sort_key(),
             Tab::Nexus => self.state.nexus.cycle_sort_key(),
+            Tab::Env => self.state.env.cycle_sort_key(),
         }
     }
 
@@ -496,6 +523,7 @@ impl App {
             Tab::Locker => self.state.locker.toggle_sort_order(),
             Tab::Controller => self.state.controller.toggle_sort_order(),
             Tab::Nexus => self.state.nexus.toggle_sort_order(),
+            Tab::Env => self.state.env.toggle_sort_order(),
         }
     }
 

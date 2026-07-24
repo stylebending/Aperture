@@ -51,45 +51,69 @@ aperture
 
 **Locker Tab - Process Management**
 ```
-┌────────────────────────────────────────┬───────────────────┐
-│ Aperture [Locker] [Controller] [Nexus] │ Keys              │
-├────────────────────────────────────────┼───────────────────┤
-│ → Find and kill processes holding file │ Navigation        │
-│   locks                                │ j/k     Move      │
-│                                        │ ↑/↓     Move      │
-│ ┌────────────────────────────────────┐ │ C-d/u   Page      │
-│ │ Processes (Locker) [CPU▼] [45/230] │ │ Tab     SwitchTab │
-│ │                                    │ │                   │
-│ │ 1234  chrome.exe   15.2%   245.6MB │ │ Actions           │
-│ │ 5678  firefox.exe   8.1%   189.2MB │ │ /       Search    │
-│ │ 9012  notepad.exe   0.5%     4.2MB │ │ s/S     Sort      │
-│ │ 3456  code.exe      3.2%    56.8MB │ │ f       FindLocks │
-│ │ 7890  explorer.exe  2.1%    78.3MB │ │ K       Kill      │
-│ │ ...                                │ │ r       Refresh   │
-│ └────────────────────────────────────┘ │ Esc     ClearFilt │
-│ Sort: CPU ▼              CPU: 45.2%  Mem:  4.2/ 31.9GB │   │
-└────────────────────────────────────────┴───────────────────┘
+┌──────────────────────────────────────────────┬───────────────────┐
+│ Aperture [Locker] [Controller] [Nexus] [Env] │ Keys              │
+├──────────────────────────────────────────────┼───────────────────┤
+│ → Find and kill processes holding file locks │ Navigation        │
+│                                              │ j/k     Move      │
+│                                              │ ↑/↓     Move      │
+│ ┌──────────────────────────────────────┐     │ C-d/u   Page      │
+│ │ Processes (Locker) [CPU▼] [45/230]   │     │ Tab     SwitchTab│
+│ │                                      │     │                   │
+│ │ 1234  chrome.exe   15.2%   245.6MB   │     │ Actions           │
+│ │ 5678  firefox.exe   8.1%   189.2MB   │     │ /       Search    │
+│ │ 9012  notepad.exe   0.5%     4.2MB   │     │ s/S     Sort      │
+│ │ 3456  code.exe      3.2%    56.8MB   │     │ f       FindLocks │
+│ │ 7890  explorer.exe  2.1%    78.3MB   │     │ K       Kill      │
+│ │ ...                                  │     │ r       Refresh   │
+│ └──────────────────────────────────────┘     │ Esc     ClearFilt │
+│ Sort: CPU ▼            CPU: 45.2%  Mem: 4.2/31.9GB │             │
+└──────────────────────────────────────────────┴───────────────────┘
 ```
 
 **Controller Tab - Service Management**
 ```
-┌────────────────────────────────────────┬───────────────────┐
-│ ... [Controller] ...                   │ Keys              │
-├────────────────────────────────────────┼───────────────────┤
-│ → Start, stop, and manage Windows      │ Navigation        │
-│   services                             │ j/k     Move      │
-│                                        │ ...               │
-│ ┌────────────────────────────────────┐ │                   │
-│ │ Services (Controller) [Status▲]    │ │ Actions           │
-│ │                                    │ │ /       Search    │
-│ │ Windows Update        Running ...  │ │ s/S     Sort      │
-│ │ Print Spooler         Running ...  │ │ Enter   Toggle    │
-│ │ Bluetooth Service     Stopped ...  │ │ r       Refresh   │
-│ │ ...                                │ │ Esc     ClearFilt │
-│ └────────────────────────────────────┘ │                   │
-│ Sort: Status ▲          CPU: 45.2%  Mem:  4.2/ 31.9GB │   │
-└────────────────────────────────────────┴───────────────────┘
+┌──────────────────────────────────────────────┬───────────────────┐
+│ ... [Controller] ...         [Nexus] [Env]   │ Keys              │
+├──────────────────────────────────────────────┼───────────────────┤
+│ → Start, stop, and manage Windows services   │ Navigation        │
+│                                              │ j/k     Move      │
+│                                              │ ↑/↓     Move      │
+│ ┌──────────────────────────────────────┐     │ ...               │
+│ │ Services (Controller) [Status▲]      │     │ Actions           │
+│ │                                      │     │ /       Search    │
+│ │ Windows Update        Running ...    │     │ s/S     Sort      │
+│ │ Print Spooler         Running ...    │     │ Enter   Toggle    │
+│ │ Bluetooth Service     Stopped ...    │     │ r       Refresh   │
+│ │ ...                                  │     │ Esc     ClearFilt │
+│ └──────────────────────────────────────┘     │                   │
+│ Sort: Status ▲         CPU: 45.2%  Mem: 4.2/31.9GB │             │
+└──────────────────────────────────────────────┴───────────────────┘
 ```
+
+**Env Tab - Environment Variables**
+```
+┌──────────────────────────────────────────────┬───────────────────┐
+│ ... [Nexus] [Env]                            │ Keys              │
+├──────────────────────────────────────────────┼───────────────────┤
+│ → View user, system, and process environment │ Navigation        │
+│   variables                                  │ j/k     Move      │
+│                                              │ ↑/↓     Move      │
+│ ┌──────────────────────────────────────┐     │ ...               │
+│ │ Environment [74/74 | Name ▲]         │     │ Actions           │
+│ │                                      │     │ /       Search    │
+│ │ ALLUSERSPROFILE  C:\ProgramData  Sys │     │ s/S     Sort      │
+│ │ APPDATA          C:\Users\Me\... Usr │     │ r       Refresh   │
+│ │ JAVA_HOME        C:\Java\...     Usr │     │ Esc     ClearFilt │
+│ │ PATH             C:\Windows\...  Sys │     │                   │
+│ │ PATH          C:\Tools\bin       Usr │     │ Quit              │
+│ │ PATH          C:\Users\Me\...   Prc  │     │ q       Exit      │
+│ │ ...                                  │     │                   │
+│ └──────────────────────────────────────┘     │                   │
+│ Sort: Name ▲           CPU: 45.2%  Mem: 4.2/31.9GB │             │
+└──────────────────────────────────────────────┴───────────────────┘
+```
+*Overridden entries are shown dimmed and grey. Scope colors: System=Cyan, User=Green, Process=Yellow.*
 
 **File Lock Search Modal**
 ```
@@ -171,6 +195,17 @@ See detailed information about a process:
 5. Press `K` in the modal to kill the process (requires admin)
 6. Press `Esc` or `q` to close
 
+### Browse Environment Variables
+
+View all environment variables across scopes:
+
+1. Switch to **Env** tab (press `Tab` until you see "Env")
+2. See System (cyan), User (green), and Process (yellow) variables
+3. **Sort by**: Name or Scope — press `s` to cycle, `S` to toggle order
+4. **Filter** with `/` — search by name, value, or scope
+5. Overridden entries (same name in higher-priority scope) are shown dimmed
+6. Priority order: Process overrides User overrides System
+
 ### Export Data
 
 Export all data to JSON or CSV format:
@@ -224,11 +259,16 @@ Each tab supports different sorting:
 - Press `S` to toggle order
 - Default: State ascending (ESTABLISHED first)
 
+**Env (Environment Variables):**
+- Press `s` to cycle: Name → Scope
+- Press `S` to toggle order
+- Default: Name ascending
+
 ## Keybindings
 
 | Category | Key | Action | Context | Description |
 |----------|-----|--------|---------|-------------|
-| **Navigation** | `Tab` / `Shift+Tab` | Switch tabs | Global | Move between Locker/Controller/Nexus |
+| **Navigation** | `Tab` / `Shift+Tab` | Switch tabs | Global | Move between Locker/Controller/Nexus/Env |
 | | `j` / `k` | Navigate | Lists | Move down/up one item |
 | | `↑` / `↓` | Navigate | Lists | Alternative to j/k |
 | | `Ctrl+D` | Page down | Lists | Jump down 10 items |
@@ -336,16 +376,19 @@ aperture/
 │   │   ├── mod.rs       # Layout, sidebar, status bar
 │   │   ├── locker.rs    # Process tab UI with sorting
 │   │   ├── controller.rs # Services tab UI with sorting
-│   │   └── nexus.rs     # Network tab UI with sorting
+│   │   ├── nexus.rs     # Network tab UI with sorting
+│   │   └── env.rs       # Environment variables tab UI
 │   ├── sys/             # Windows API abstractions
 │   │   ├── process.rs   # Process enumeration, CPU/memory metrics
 │   │   ├── service.rs   # SCM/Service control
 │   │   ├── network.rs   # IP Helper/TCP-UDP connections
+│   │   ├── env.rs       # Registry and process environment variables
 │   │   └── handle.rs    # File lock detection (Restart Manager)
 │   └── state/           # Per-tab state with sorting
 │       ├── locker.rs    # Process state, PID tracking
 │       ├── controller.rs # Service state, name tracking
-│       └── nexus.rs     # Connection state, key tracking
+│       ├── nexus.rs     # Connection state, key tracking
+│       └── env.rs       # Environment variable state, filter, sort
 ├── Cargo.toml
 └── README.md
 ```
@@ -363,6 +406,7 @@ aperture/
 | Network Connections (IPv4) | `GetExtendedTcpTable`, `GetExtendedUdpTable` |
 | Network Connections (IPv6) | `GetExtendedTcpTable` (AF_INET6), `GetExtendedUdpTable` (AF_INET6) |
 | File Lock Detection | `RmRegisterResources`, `RmGetList` (Restart Manager) |
+| Environment Variables | `RegOpenKeyExW`, `RegEnumValueW`, `RegQueryInfoKeyW`, `RegCloseKey` |
 
 ## Roadmap
 
@@ -380,6 +424,7 @@ aperture/
 - [x] **Process details view** - Show loaded modules, parent PID, and process info
 - [x] **Export to JSON/CSV** - Export all tab data with timestamps
 - [x] **IPv6 support** - Full IPv6 TCP/UDP connection monitoring
+- [x] **Environment variables viewer** - Browse System, User, and Process env vars with filtering
 
 ### In Progress / TODO
 - [ ] Real-time service status notifications via `NotifyServiceStatusChange`
@@ -414,8 +459,16 @@ Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows'
 - **Sort by**: Connection State, PID, Protocol, Process Name
 - **Filter** connections by address, port, PID, or process name
 
+### The Env (Environment Variables)
+- View all environment variables from System, User, and Process scopes
+- Scope-priority coloring: System (cyan), User (green), Process (yellow)
+- Overridden entries (higher-priority scope shadowing a lower one) rendered dimmed
+- **Sort by**: Name, Scope
+- **Filter** by name, value, or scope
+
 ### UI Features
 - **Vim Motions** keybindings for easy navigation
+- **Four tabs** - Locker (processes), Controller (services), Nexus (network), Env (environment)
 - **Permanent sidebar** with context-aware keybindings
 - **System metrics** in the status bar - Total CPU and memory usage visible from any tab
 - **Smart data caching** - All tabs preload for instant switching

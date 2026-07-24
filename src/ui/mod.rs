@@ -1,4 +1,5 @@
 mod controller;
+mod env;
 mod locker;
 mod nexus;
 
@@ -107,6 +108,7 @@ fn render_tab_description(f: &mut Frame, app: &mut App, area: Rect) {
         Tab::Locker => "Find and kill processes holding file locks",
         Tab::Controller => "Start, stop, and manage Windows services",
         Tab::Nexus => "Monitor active network connections",
+        Tab::Env => "View user, system, and process environment variables",
     };
 
     let desc_line = Line::from(vec![
@@ -200,6 +202,9 @@ fn render_keybindings_sidebar(f: &mut Frame, app: &App, area: Rect) {
         Tab::Nexus => {
             // Nexus has fewer specific actions
         }
+        Tab::Env => {
+            // Env has no tab-specific actions yet
+        }
     }
 
     // Common keybindings
@@ -262,6 +267,7 @@ fn render_tab_content(f: &mut Frame, app: &mut App, area: Rect) {
             controller::render(f, &mut app.state.controller, &app.search_query, area)
         }
         Tab::Nexus => nexus::render(f, &mut app.state.nexus, &app.search_query, area),
+        Tab::Env => env::render(f, &mut app.state.env, &app.search_query, area),
     }
 }
 
@@ -289,6 +295,11 @@ fn render_status_bar(f: &mut Frame, app: &mut App, area: Rect) {
             "Sort: {} {}",
             app.state.nexus.sort_key.as_str(),
             app.state.nexus.sort_order.as_str()
+        ),
+        Tab::Env => format!(
+            "Sort: {} {}",
+            app.state.env.sort_key.as_str(),
+            app.state.env.sort_order.as_str()
         ),
     };
     left_spans.push(Span::styled(sort_info, Style::default().fg(Color::Cyan)));
