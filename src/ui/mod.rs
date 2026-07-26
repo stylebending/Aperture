@@ -108,7 +108,7 @@ fn render_tab_description(f: &mut Frame, app: &mut App, area: Rect) {
         Tab::Locker => "Find and kill processes holding file locks",
         Tab::Controller => "Start, stop, and manage Windows services",
         Tab::Nexus => "Monitor active network connections",
-        Tab::Env => "View user, system, and process environment variables",
+        Tab::Env => "Manage user, system, and process environment variables",
     };
 
     let desc_line = Line::from(vec![
