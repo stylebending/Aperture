@@ -76,6 +76,40 @@ pub enum Modal {
     },
     ProcessDetails(ProcessDetails),
     ExportFormat,
+    EnvVarEdit {
+        name: String,
+        original_name: String,
+        value: String,
+        scope: EnvScopeEdit,
+        is_new: bool,
+        field: u8,
+    },
+    EnvVarConfirmDelete {
+        name: String,
+        scope: state::env::EnvScope,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnvScopeEdit {
+    User,
+    System,
+}
+
+impl EnvScopeEdit {
+    pub fn toggle(self) -> Self {
+        match self {
+            EnvScopeEdit::User => EnvScopeEdit::System,
+            EnvScopeEdit::System => EnvScopeEdit::User,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            EnvScopeEdit::User => "User",
+            EnvScopeEdit::System => "System",
+        }
+    }
 }
 
 pub struct AppState {
@@ -103,6 +137,7 @@ pub struct App {
     pub search_mode: bool,
     pub search_query: String,
     pub status_message: Option<String>,
+    pub status_is_error: bool,
     pub modal: Option<Modal>,
     pub handle_search_input_mode: bool,
     pub pending_gg: bool,
@@ -120,6 +155,7 @@ impl App {
             search_mode: false,
             search_query: String::new(),
             status_message: None,
+            status_is_error: false,
             modal: None,
             handle_search_input_mode: false,
             pending_gg: false,
@@ -271,8 +307,10 @@ impl App {
             let pid = *pid;
             if let Err(e) = sys::process::kill_process(pid) {
                 self.status_message = Some(format!("Failed to kill process: {}", e));
+                self.status_is_error = true;
             } else {
                 self.status_message = Some(format!("Process {} killed", pid));
+                self.status_is_error = false;
                 self.refresh_current_tab();
             }
         }
@@ -476,6 +514,222 @@ impl App {
             .update_env_vars(process_vars, user_vars, system_vars);
     }
 
+    pub fn open_env_add(&mut self) {
+        self.modal = Some(Modal::EnvVarEdit {
+            name: String::new(),
+            original_name: String::new(),
+            value: String::new(),
+            scope: EnvScopeEdit::User,
+            is_new: true,
+            field: 0,
+        });
+    }
+
+    pub fn open_env_edit(&mut self) {
+        let entry = match self.state.env.get_selected_entry() {
+            Some(e) => e,
+            None => return,
+        };
+        match entry.scope {
+            state::env::EnvScope::Process => {
+                self.status_message = Some("Session-only var — press `a` to add a persisted copy".to_string());
+                self.status_is_error = false;
+            }
+            state::env::EnvScope::User => {
+                self.modal = Some(Modal::EnvVarEdit {
+                    name: entry.name.clone(),
+                    original_name: entry.name.clone(),
+                    value: entry.value.clone(),
+                    scope: EnvScopeEdit::User,
+                    is_new: false,
+                    field: 0,
+                });
+            }
+            state::env::EnvScope::System => {
+                self.modal = Some(Modal::EnvVarEdit {
+                    name: entry.name.clone(),
+                    original_name: entry.name.clone(),
+                    value: entry.value.clone(),
+                    scope: EnvScopeEdit::System,
+                    is_new: false,
+                    field: 0,
+                });
+            }
+        }
+    }
+
+    pub fn open_env_delete(&mut self) {
+        let entry = match self.state.env.get_selected_entry() {
+            Some(e) => e,
+            None => return,
+        };
+        match entry.scope {
+            state::env::EnvScope::Process => {
+                self.status_message = Some("Session-only var cannot be deleted — restart without it".to_string());
+                self.status_is_error = false;
+            }
+            state::env::EnvScope::User | state::env::EnvScope::System => {
+                self.modal = Some(Modal::EnvVarConfirmDelete {
+                    name: entry.name.clone(),
+                    scope: entry.scope,
+                });
+            }
+        }
+    }
+
+    pub fn confirm_env_delete(&mut self) {
+        let (name, scope) = match &self.modal {
+            Some(Modal::EnvVarConfirmDelete { name, scope }) => (name.clone(), *scope),
+            _ => return,
+        };
+        self.modal = None;
+
+        if scope == state::env::EnvScope::System && !self.is_elevated {
+            self.status_message = Some("Cannot delete System env var without admin elevation".to_string());
+            self.status_is_error = true;
+            self.refresh_env();
+            return;
+        }
+
+        let result = match scope {
+            state::env::EnvScope::User => sys::env::delete_user_env_var(&name),
+            state::env::EnvScope::System => sys::env::delete_system_env_var(&name),
+            state::env::EnvScope::Process => return,
+        };
+
+        match result {
+            Ok(()) => {
+                let _ = sys::env::broadcast_env_change();
+                // Purge from current process's env block to prevent ghost Process entries
+                let _ = sys::env::delete_process_env_var(&name);
+                self.status_message = Some(format!("Deleted \"{}\" ({})", name, scope.as_str()));
+                self.status_is_error = false;
+            }
+            Err(e) => {
+                self.status_message = Some(format!("Failed to delete \"{}\": {}", name, e));
+                self.status_is_error = true;
+            }
+        }
+        self.refresh_env();
+    }
+
+    pub fn confirm_env_save(&mut self) {
+        let (is_new, name, original_name, value, scope) = match &self.modal {
+            Some(Modal::EnvVarEdit {
+                name,
+                original_name,
+                value,
+                scope,
+                is_new,
+                field: _,
+            }) if !name.is_empty() => (*is_new, name.clone(), original_name.clone(), value.clone(), *scope),
+            _ => return,
+        };
+        self.modal = None;
+
+        if scope == EnvScopeEdit::System && !self.is_elevated {
+            self.status_message = Some("Cannot save System env var without admin elevation".to_string());
+            self.status_is_error = true;
+            self.refresh_env();
+            return;
+        }
+
+        let result = match scope {
+            EnvScopeEdit::User => {
+                if !is_new && name != original_name {
+                    let _ = sys::env::delete_user_env_var(&original_name);
+                }
+                sys::env::set_user_env_var(&name, &value)
+            }
+            EnvScopeEdit::System => {
+                if !is_new && name != original_name {
+                    let _ = sys::env::delete_system_env_var(&original_name);
+                }
+                sys::env::set_system_env_var(&name, &value)
+            }
+        };
+
+        match result {
+            Ok(()) => {
+                let _ = sys::env::broadcast_env_change();
+                // If renamed, purge the old name from the current process's env block
+                if !is_new && name != original_name {
+                    let _ = sys::env::delete_process_env_var(&original_name);
+                }
+                let action = if is_new { "Added" } else { "Saved" };
+                self.status_message = Some(format!("{} \"{}\" ({})", action, name, scope.as_str()));
+                self.status_is_error = false;
+            }
+            Err(e) => {
+                self.status_message = Some(format!("Failed to save \"{}\": {}", name, e));
+                self.status_is_error = true;
+            }
+        }
+        self.refresh_env();
+    }
+
+    pub fn env_edit_char(&mut self, c: char) {
+        let modal = match &mut self.modal {
+            Some(Modal::EnvVarEdit {
+                name, value, field, ..
+            }) => {
+                match field {
+                    0 => name.push(c),
+                    1 => value.push(c),
+                    _ => {}
+                }
+            }
+            _ => return,
+        };
+        let _ = modal;
+    }
+
+    pub fn env_edit_backspace(&mut self) {
+        let modal = match &mut self.modal {
+            Some(Modal::EnvVarEdit {
+                name, value, field, ..
+            }) => {
+                match field {
+                    0 => { name.pop(); }
+                    1 => { value.pop(); }
+                    _ => {}
+                }
+            }
+            _ => return,
+        };
+        let _ = modal;
+    }
+
+    pub fn env_edit_toggle_scope(&mut self) {
+        let modal = match &mut self.modal {
+            Some(Modal::EnvVarEdit { scope, field, .. }) if *field == 2 => {
+                *scope = scope.toggle();
+            }
+            _ => return,
+        };
+        let _ = modal;
+    }
+
+    pub fn env_edit_next_field(&mut self) {
+        let modal = match &mut self.modal {
+            Some(Modal::EnvVarEdit { field, .. }) => {
+                *field = (*field + 1) % 3;
+            }
+            _ => return,
+        };
+        let _ = modal;
+    }
+
+    pub fn env_edit_prev_field(&mut self) {
+        let modal = match &mut self.modal {
+            Some(Modal::EnvVarEdit { field, .. }) => {
+                *field = (*field + 2) % 3;
+            }
+            _ => return,
+        };
+        let _ = modal;
+    }
+
     pub fn refresh_all_tabs(&mut self) {
         // Load data for all tabs so switching is instant
         if let Ok(processes) = sys::process::enumerate_processes() {
@@ -642,9 +896,11 @@ impl App {
         ) {
             Ok(path) => {
                 self.status_message = Some(format!("Exported to {}", path));
+                self.status_is_error = false;
             }
             Err(e) => {
                 self.status_message = Some(format!("Export failed: {}", e));
+                self.status_is_error = true;
             }
         }
     }
@@ -657,9 +913,11 @@ impl App {
         ) {
             Ok(path) => {
                 self.status_message = Some(format!("Exported to {}", path));
+                self.status_is_error = false;
             }
             Err(e) => {
                 self.status_message = Some(format!("Export failed: {}", e));
+                self.status_is_error = true;
             }
         }
     }

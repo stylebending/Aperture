@@ -220,52 +220,57 @@ impl EnvState {
 
         let mut entries: Vec<EnvEntry> = Vec::new();
 
-        let process_map: HashMap<String, String> = process_vars.into_iter().collect();
-        let user_map: HashMap<String, String> = user_vars.into_iter().collect();
-        let system_map: HashMap<String, String> = system_vars.into_iter().collect();
+        let to_upper_map = |vars: Vec<(String, String)>| -> HashMap<String, (String, String)> {
+            vars.into_iter()
+                .map(|(k, v)| (k.to_uppercase(), (k, v)))
+                .collect()
+        };
+
+        let process_map: HashMap<String, (String, String)> = to_upper_map(process_vars);
+        let user_map: HashMap<String, (String, String)> = to_upper_map(user_vars);
+        let system_map: HashMap<String, (String, String)> = to_upper_map(system_vars);
 
         let mut all_names: Vec<String> = process_map
             .keys()
             .chain(user_map.keys())
             .chain(system_map.keys())
-            .map(|s| s.to_uppercase())
+            .cloned()
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
             .collect::<Vec<_>>();
         all_names.sort();
 
-        for name in all_names {
-            let sys_val = system_map.get(&name);
-            let usr_val = user_map.get(&name);
-            let prc_val = process_map.get(&name);
-
-            if let Some(value) = sys_val {
-                let overridden = usr_val.is_some() || prc_val.is_some();
+        for up_name in all_names {
+            if let Some((sys_name, sys_value)) = system_map.get(&up_name) {
+                let overridden = user_map.contains_key(&up_name);
                 entries.push(EnvEntry {
-                    name: name.clone(),
-                    value: value.clone(),
+                    name: sys_name.clone(),
+                    value: sys_value.clone(),
                     scope: EnvScope::System,
                     overridden,
                 });
             }
 
-            if let Some(value) = usr_val {
-                let overridden = prc_val.is_some();
+            if let Some((usr_name, usr_value)) = user_map.get(&up_name) {
                 entries.push(EnvEntry {
-                    name: name.clone(),
-                    value: value.clone(),
+                    name: usr_name.clone(),
+                    value: usr_value.clone(),
                     scope: EnvScope::User,
-                    overridden,
+                    overridden: false,
                 });
             }
 
-            if let Some(value) = prc_val {
-                entries.push(EnvEntry {
-                    name: name.clone(),
-                    value: value.clone(),
-                    scope: EnvScope::Process,
-                    overridden: false,
-                });
+            // Only show Process entry if no User or System registry entry exists
+            // (otherwise the registry entry is the authoritative persisted source)
+            if !user_map.contains_key(&up_name) && !system_map.contains_key(&up_name) {
+                if let Some((prc_name, prc_value)) = process_map.get(&up_name) {
+                    entries.push(EnvEntry {
+                        name: prc_name.clone(),
+                        value: prc_value.clone(),
+                        scope: EnvScope::Process,
+                        overridden: false,
+                    });
+                }
             }
         }
 
@@ -329,5 +334,11 @@ impl EnvState {
         if !filtered.is_empty() {
             self.list_state.select(Some(filtered.len() - 1));
         }
+    }
+
+    pub fn get_selected_entry(&self) -> Option<&EnvEntry> {
+        let idx = self.list_state.selected()?;
+        let filtered = self.get_filtered_indices();
+        filtered.get(idx).map(|&i| &self.entries[i])
     }
 }

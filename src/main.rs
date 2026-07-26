@@ -305,6 +305,43 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
                     _ => {}
                 }
             }
+            app::Modal::EnvVarEdit { .. } => {
+                match code {
+                    KeyCode::Esc | KeyCode::Char('q') => {
+                        app.cancel_modal();
+                    }
+                    KeyCode::Enter => {
+                        app.confirm_env_save();
+                    }
+                    KeyCode::Tab => {
+                        app.env_edit_next_field();
+                    }
+                    KeyCode::BackTab => {
+                        app.env_edit_prev_field();
+                    }
+                    KeyCode::Char(' ') => {
+                        app.env_edit_toggle_scope();
+                    }
+                    KeyCode::Backspace => {
+                        app.env_edit_backspace();
+                    }
+                    KeyCode::Char(c) => {
+                        app.env_edit_char(c);
+                    }
+                    _ => {}
+                }
+            }
+            app::Modal::EnvVarConfirmDelete { .. } => {
+                match code {
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        app.confirm_env_delete();
+                    }
+                    KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc | KeyCode::Char('q') => {
+                        app.cancel_modal();
+                    }
+                    _ => {}
+                }
+            }
         }
         return Ok(false);
     }
@@ -361,8 +398,23 @@ fn handle_key_event(app: &mut App, key: event::KeyEvent) -> Result<bool, Box<dyn
                 app.show_process_details();
             }
         }
+        KeyCode::Char('D') => {
+            if app.current_tab == app::Tab::Env {
+                app.open_env_delete();
+            }
+        }
         KeyCode::Char('e') => {
             app.open_export_modal();
+        }
+        KeyCode::Char('E') => {
+            if app.current_tab == app::Tab::Env {
+                app.open_env_edit();
+            }
+        }
+        KeyCode::Char('a') => {
+            if app.current_tab == app::Tab::Env {
+                app.open_env_add();
+            }
         }
         KeyCode::Char('K') => {
             if app.current_tab == app::Tab::Locker && app.is_elevated {

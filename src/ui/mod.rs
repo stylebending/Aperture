@@ -203,7 +203,18 @@ fn render_keybindings_sidebar(f: &mut Frame, app: &App, area: Rect) {
             // Nexus has fewer specific actions
         }
         Tab::Env => {
-            // Env has no tab-specific actions yet
+            lines.push(Line::from(vec![
+                Span::styled("a", key_style),
+                Span::styled("     Add", action_style),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("E", key_style),
+                Span::styled("     Edit", action_style),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("D", key_style),
+                Span::styled("     Delete", action_style),
+            ]));
         }
     }
 
@@ -312,8 +323,9 @@ fn render_status_bar(f: &mut Frame, app: &mut App, area: Rect) {
     }
 
     if let Some(msg) = &app.status_message {
+        let color = if app.status_is_error { Color::Red } else { Color::Green };
         left_spans.push(Span::styled("  ", Style::default()));
-        left_spans.push(Span::styled(msg, Style::default().fg(Color::Yellow)));
+        left_spans.push(Span::styled(msg, Style::default().fg(color)));
     }
 
     if !app.is_elevated {
@@ -416,6 +428,19 @@ fn render_modal(f: &mut Frame, app: &mut App) {
         }
         Some(Modal::ExportFormat) => {
             render_export_format_modal(f);
+        }
+        Some(Modal::EnvVarEdit {
+            name,
+            value,
+            scope,
+            is_new,
+            field,
+            ..
+        }) => {
+            render_env_var_edit_modal(f, name, value, scope, *is_new, *field, app.is_elevated);
+        }
+        Some(Modal::EnvVarConfirmDelete { name, scope }) => {
+            render_env_var_delete_modal(f, name, scope);
         }
         _ => {}
     }
@@ -795,6 +820,157 @@ fn render_export_format_modal(f: &mut Frame) {
                 .borders(Borders::ALL)
                 .title(" Export ")
                 .title_style(Style::default().fg(Color::Cyan)),
+        )
+        .alignment(Alignment::Center);
+
+    f.render_widget(Clear, area);
+    f.render_widget(paragraph, area);
+}
+
+fn render_env_var_edit_modal(
+    f: &mut Frame,
+    name: &str,
+    value: &str,
+    scope: &crate::app::EnvScopeEdit,
+    is_new: bool,
+    field: u8,
+    is_elevated: bool,
+) {
+    let area = centered_rect(70, 17, f.area());
+
+    let cursor_style = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let label_style = Style::default().fg(Color::Yellow);
+    let value_style = Style::default().fg(Color::White);
+    let selected_style = Style::default()
+        .bg(Color::DarkGray)
+        .fg(Color::White)
+        .add_modifier(Modifier::BOLD);
+    let dim_style = Style::default().fg(Color::DarkGray);
+
+    let field_label = if field == 0 { "▸ " } else { "  " };
+    let value_label = if field == 1 { "▸ " } else { "  " };
+    let scope_label = if field == 2 { "▸ " } else { "  " };
+
+    let scope_user_mark = if matches!(scope, crate::app::EnvScopeEdit::User) {
+        "●"
+    } else {
+        "○"
+    };
+    let scope_system_mark = if matches!(scope, crate::app::EnvScopeEdit::System) {
+        "●"
+    } else {
+        "○"
+    };
+
+    let title_text = if is_new { "Add" } else { "Edit" };
+
+    let system_warning = !is_elevated && matches!(scope, crate::app::EnvScopeEdit::System);
+
+    let lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("{} Environment Variable", title_text),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(field_label, if field == 0 { cursor_style } else { dim_style }),
+            Span::styled("Name:  ", label_style),
+            Span::styled(
+                if name.is_empty() { "(empty)" } else { name },
+                if field == 0 { selected_style } else { value_style },
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(value_label, if field == 1 { cursor_style } else { dim_style }),
+            Span::styled("Value: ", label_style),
+            Span::styled(
+                if value.is_empty() { "(empty)" } else { value },
+                if field == 1 { selected_style } else { value_style },
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(scope_label, if field == 2 { cursor_style } else { dim_style }),
+            Span::styled("Scope: ", label_style),
+            Span::styled(scope_user_mark, if field == 2 { cursor_style } else { value_style }),
+            Span::styled(" User  ", value_style),
+            Span::styled(scope_system_mark, if field == 2 { cursor_style } else { value_style }),
+            Span::styled(" System", value_style),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            if system_warning {
+                "[!] System scope requires admin elevation"
+            } else {
+                "Note: System scope requires admin elevation"
+            },
+            if system_warning {
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            },
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("[Tab] Next  ", Style::default().fg(Color::Gray)),
+            Span::styled("[Space] Toggle Scope  ", Style::default().fg(Color::Gray)),
+            Span::styled("[Enter] Save  ", Style::default().fg(Color::Green)),
+            Span::styled("[Esc] Cancel", Style::default().fg(Color::Gray)),
+        ]),
+    ];
+
+    let paragraph = Paragraph::new(lines).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(format!(" {} Environment Variable ", title_text))
+            .title_style(Style::default().fg(Color::Cyan)),
+    );
+
+    f.render_widget(Clear, area);
+    f.render_widget(paragraph, area);
+}
+
+fn render_env_var_delete_modal(
+    f: &mut Frame,
+    name: &str,
+    scope: &crate::state::env::EnvScope,
+) {
+    let area = centered_rect(60, 11, f.area());
+
+    let lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "Delete Environment Variable",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  Delete \"", Style::default().fg(Color::White)),
+            Span::styled(name, Style::default().fg(Color::Red)),
+            Span::styled(
+                format!("\" ({} scope)?", scope.as_str()),
+                Style::default().fg(Color::White),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("       [Y] Yes  ", Style::default().fg(Color::Green)),
+            Span::styled("[N] No", Style::default().fg(Color::Red)),
+        ]),
+        Line::from(""),
+    ];
+
+    let paragraph = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Confirmation ")
+                .title_style(Style::default().fg(Color::Red)),
         )
         .alignment(Alignment::Center);
 

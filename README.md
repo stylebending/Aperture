@@ -30,7 +30,7 @@ Then restart your terminal and run `aperture` from anywhere!
 ## Installation (package managers)
 
 ### WinGet
-`winget install aperture`
+`winget install stylebending.aperture`
 
 ### Scoop
 Scoop requires 100 GitHub stars or 2000 downloads to be in their Extras bucket, for now please use this installation command:  
@@ -96,24 +96,24 @@ aperture
 ┌──────────────────────────────────────────────┬───────────────────┐
 │ ... [Nexus] [Env]                            │ Keys              │
 ├──────────────────────────────────────────────┼───────────────────┤
-│ → View user, system, and process environment │ Navigation        │
-│   variables                                  │ j/k     Move      │
-│                                              │ ↑/↓     Move      │
-│ ┌──────────────────────────────────────┐     │ ...               │
-│ │ Environment [74/74 | Name ▲]         │     │ Actions           │
-│ │                                      │     │ /       Search    │
-│ │ ALLUSERSPROFILE  C:\ProgramData  Sys │     │ s/S     Sort      │
-│ │ APPDATA          C:\Users\Me\... Usr │     │ r       Refresh   │
-│ │ JAVA_HOME        C:\Java\...     Usr │     │ Esc     ClearFilt │
-│ │ PATH             C:\Windows\...  Sys │     │                   │
-│ │ PATH          C:\Tools\bin       Usr │     │ Quit              │
-│ │ PATH          C:\Users\Me\...   Prc  │     │ q       Exit      │
-│ │ ...                                  │     │                   │
-│ └──────────────────────────────────────┘     │                   │
-│ Sort: Name ▲           CPU: 45.2%  Mem: 4.2/31.9GB │             │
+ │ → View user, system, and process environment │ Navigation        │
+ │   variables                                  │ j/k     Move      │
+ │                                              │ ↑/↓     Move      │
+ │ ┌──────────────────────────────────────┐     │ ...               │
+ │ │ Environment [74/74 | Name ▲]         │     │ Actions           │
+ │ │                                      │     │ /       Search    │
+ │ │ ALLUSERSPROFILE  C:\ProgramData  Sys │     │ s/S     Sort      │
+ │ │ APPDATA          C:\Users\Me\... Usr │     │ a       Add       │
+ │ │ JAVA_HOME        C:\Java\...     Usr │     │ E       Edit      │
+ │ │ PATH             C:\Windows\...  Sys │     │ D       Delete    │
+ │ │ MY_VAR        some value         Usr │     │ r       Refresh   │
+ │ │ TEMP          C:\Temp            Sys │     │ Esc     ClearFilt │
+ │ │ ZENDATA_HOME  C:\zend\...        Prc │     │                   │
+ │ └──────────────────────────────────────┘     │ Quit              │
+ │ Sort: Name ▲           CPU: 45.2%  Mem: 4.2/31.9GB │ q Exit     │
 └──────────────────────────────────────────────┴───────────────────┘
 ```
-*Overridden entries are shown dimmed and grey. Scope colors: System=Cyan, User=Green, Process=Yellow.*
+*Scope colors: System=Cyan, User=Green, Process=Yellow. Process-only entries shown when not backed by registry.*
 
 **File Lock Search Modal**
 ```
@@ -195,16 +195,21 @@ See detailed information about a process:
 5. Press `K` in the modal to kill the process (requires admin)
 6. Press `Esc` or `q` to close
 
-### Browse Environment Variables
+### Manage Environment Variables
 
-View all environment variables across scopes:
+View, add, edit, and delete environment variables across scopes:
 
 1. Switch to **Env** tab (press `Tab` until you see "Env")
 2. See System (cyan), User (green), and Process (yellow) variables
 3. **Sort by**: Name or Scope — press `s` to cycle, `S` to toggle order
 4. **Filter** with `/` — search by name, value, or scope
-5. Overridden entries (same name in higher-priority scope) are shown dimmed
-6. Priority order: Process overrides User overrides System
+5. Process-only variables (set by current shell, no registry backing) shown in yellow
+6. Registry-backed variables only show once (Process copy hidden when redundant)
+7. **Add** a new variable: press `a` to open the edit modal with empty fields
+8. **Edit** a variable: navigate to an entry and press `E`
+9. **Delete** a variable: navigate to an entry and press `D`
+10. System scope operations require admin elevation
+11. Process-only entries are session-only — press `a` to persist one
 
 ### Export Data
 
@@ -287,6 +292,13 @@ Each tab supports different sorting:
 | | `d` | Details | Locker only | Show process details modal |
 | | `K` | Kill process | Locker only | Kill selected process (admin) |
 | **Controller** | `Enter` | Toggle service | Controller only | Start/stop selected service (admin) |
+| **Env** | `a` | Add var | Env only | Add new environment variable (User/System) |
+| | `E` | Edit var | Env only | Edit selected environment variable |
+| | `D` | Delete var | Env only | Delete selected environment variable |
+| **Env Edit Modal** | `Tab`/`Shift+Tab` | Cycle fields | Modal | Switch between Name, Value, Scope fields |
+| | `Space` | Toggle scope | Modal | Switch between User and System scope |
+| | `Enter` | Save | Modal | Save changes to registry (green status) |
+| | `Esc` | Cancel | Modal | Discard changes |
 | **File Lock Modal** | `/` | Edit path | Modal | Enter input mode to type path |
 | | `Enter` | Search | Modal | Execute search |
 | | `j`/`k` | Navigate | Modal | Move up/down results |
@@ -331,6 +343,18 @@ When process details modal is open (`d` in Locker tab):
 - View loaded modules (first 10, with count of additional modules)
 - `K` - Kill the process (requires admin)
 - `Esc` or `q` - Close modal
+
+### Env Var Edit Modal
+
+When env var add/edit modal is open (`a` or `E` in Env tab):
+- **Name** field: type the variable name
+- **Value** field: type the variable value
+- **Scope** field: press `Space` to toggle User/System
+- `Tab`/`Shift+Tab` - Cycle between Name, Value, Scope fields
+- `Enter` - Save to registry and broadcast changes
+- `Esc` - Cancel and discard changes
+- System scope changes require admin elevation
+- Process-scoped entries cannot be edited (read-only)
 
 ## Configuration
 
@@ -406,7 +430,8 @@ aperture/
 | Network Connections (IPv4) | `GetExtendedTcpTable`, `GetExtendedUdpTable` |
 | Network Connections (IPv6) | `GetExtendedTcpTable` (AF_INET6), `GetExtendedUdpTable` (AF_INET6) |
 | File Lock Detection | `RmRegisterResources`, `RmGetList` (Restart Manager) |
-| Environment Variables | `RegOpenKeyExW`, `RegEnumValueW`, `RegQueryInfoKeyW`, `RegCloseKey` |
+| Environment Variables (Read) | `RegOpenKeyExW`, `RegEnumValueW`, `RegQueryInfoKeyW`, `RegCloseKey` |
+| Environment Variables (Write) | `RegSetValueExW`, `RegDeleteValueW`, `SendMessageTimeoutW` |
 
 ## Roadmap
 
@@ -425,14 +450,14 @@ aperture/
 - [x] **Export to JSON/CSV** - Export all tab data with timestamps
 - [x] **IPv6 support** - Full IPv6 TCP/UDP connection monitoring
 - [x] **Environment variables viewer** - Browse System, User, and Process env vars with filtering
+- [x] **Environment variables management** - Add, edit, and delete env vars with registry persistence
 
 ### In Progress / TODO
+- [ ] Making as much configurable as possible, including colors/themes
 - [ ] Real-time service status notifications via `NotifyServiceStatusChange`
   - Currently polls every 2s; would show instant service state changes
 - [ ] Configurable polling intervals
   - Allow users to change 2s refresh rate
-
-Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows' deep diagnostic capabilities (Processes, Services, and Network). Unlike cross-platform tools, Aperture focuses on Windows-specific pain points: file locks, service management, and process-to-socket mapping.
 
 ## Features
 
@@ -461,10 +486,15 @@ Aperture bridges the gap between the Linux `btop`/`lsof` experience and Windows'
 
 ### The Env (Environment Variables)
 - View all environment variables from System, User, and Process scopes
-- Scope-priority coloring: System (cyan), User (green), Process (yellow)
-- Overridden entries (higher-priority scope shadowing a lower one) rendered dimmed
+- Scope coloring: System (cyan), User (green), Process (yellow)
+- Process-only variables (set by current shell, not in registry) shown in yellow
+- Registry-backed variables (System/User) hide their redundant Process copy — one entry per name
+- **Add**, **Edit**, and **Delete** User and System-scoped variables (press `a`, `E`, `D`)
+- Process-only entries are read-only — press `a` to persist one to the registry
+- System scope operations require admin elevation
 - **Sort by**: Name, Scope
 - **Filter** by name, value, or scope
+- Registry writes broadcast `WM_SETTINGCHANGE` so running apps pick up changes
 
 ### UI Features
 - **Vim Motions** keybindings for easy navigation
