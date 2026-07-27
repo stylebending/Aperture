@@ -5,6 +5,9 @@ edition = "2024"
 description = "Diagnostic tui for Windows power users"
 authors = ["stylebending"]
 license = "MIT"
+repository = "https://github.com/stylebending/Aperture"
+homepage = "https://stylebending.github.io/Aperture/"
+documentation = "https://github.com/stylebending/Aperture"
 
 [dependencies]
 ratatui = "0.29"
