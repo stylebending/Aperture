@@ -36,7 +36,7 @@ Then restart your terminal and run `aperture` from anywhere!
 Scoop requires 100 GitHub stars or 2000 downloads to be in their Extras bucket, for now please use this installation command:  
 `scoop install https://raw.githubusercontent.com/stylebending/scoop-bucket/refs/heads/main/bucket/Aperture.json`
 
-### Chocolatey
+### Chocolatey (may be behind in version)
 `choco install aperture`
 
 Installing with these package managers automatically adds Aperture to your path. After running one of those installation commands, just close and re-open your terminal and you'll immediately be able to run `aperture` from any terminal.
